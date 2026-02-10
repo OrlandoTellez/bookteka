@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router-dom";
-import App from "../App";
-import Index from "../pages/Index";
+import App from "@/App";
+import Index from "@/pages/Index";
 
 export const AppRoutes = () => {
   return (

@@ -1,1 +1,9 @@
+:root {
+  --primary-color: #f8f5ef;
+}
 
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
