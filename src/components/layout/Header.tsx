@@ -11,7 +11,10 @@ export const Header = () => {
       <article>
         <div className={styles.logoContainer}>
           <img src={logo} alt="logo bookteka" />
-          <p>Bookteka</p>
+          <div className={styles.article}>
+            <h1>Bookteka</h1>
+            <p>Lee siempre, mente mejor</p>
+          </div>
         </div>
 
         <div className={styles.buttonContainer}>

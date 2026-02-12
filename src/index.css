@@ -1,9 +1,10 @@
 :root {
-  --primary-color: #f8f5ef;
+  /*--primary-color: #f8f5ef; */
+  --primary-color: #fcf5ee;
   --secondary-color: #df8052;
   --border-color: #e0dad1;
 
-  --max-width: 1024px;
+  --max-width: 1100px;
   --padding: 20px;
 }
 
