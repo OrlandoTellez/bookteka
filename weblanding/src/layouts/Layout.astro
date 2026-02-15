@@ -1,24 +1,23 @@
 ---
-import Header from "../components/Header.astro"
+import Header from "../components/Header.astro";
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Astro Basics</title>
+  </head>
   <body>
-    <Header />  
+    <Header />
     <main>
-
-		    <slot />
-      </main>
-	</body>
+      <slot />
+    </main>
+  </body>
 </html>
 
 <style is:global>
@@ -27,33 +26,33 @@ import Header from "../components/Header.astro"
     --primary-color: #fcf5ee;
     --secondary-color: #df8052;
     --border-color: #e0dad1;
-  
+
     --max-width: 1100px;
     --padding: 20px;
   }
-  
+
   * {
     padding: 0;
     margin: 0;
     box-sizing: border-box;
   }
-  
+
   body {
     background-color: var(--primary-color);
   }
-  
+
   button {
     border: none;
     background-color: var(--secondary-color);
     border-radius: 4px;
     cursor: pointer;
-  } 
+  }
 
-  li { 
+  li {
     list-style: none;
-  } 
+  }
 
-  a { 
+  a {
     text-decoration: none;
   }
 </style>
