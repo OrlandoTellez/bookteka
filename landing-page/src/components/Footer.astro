@@ -1,0 +1,42 @@
+---
+import logo from "@/assets/logo.svg";
+---
+
+<footer>
+  <div>
+    <article>
+      <img src={logo.src} alt="logo icon" />
+      <h3>Bookteka</h3>
+    </article>
+    <p>Hecho con cariño para los amantes de la lectura.</p>
+  </div>
+</footer>
+
+<style>
+  footer {
+    width: 100%;
+    padding: 30px 40px;
+    border: 1px solid var(--border-color);
+  }
+
+  article {
+    display: flex;
+    gap: 10px;
+  }
+
+  div {
+    width: 100%;
+    max-width: var(--max-width);
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  p {
+    font-size: 16px;
+  }
+
+  img {
+    width: 24px;
+  }
+</style>
