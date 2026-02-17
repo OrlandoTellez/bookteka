@@ -1,5 +1,6 @@
 ---
 import logo from "@/assets/logo.svg";
+import IconTheme from "@/components/IconTheme.astro";
 ---
 
 <header>
@@ -8,43 +9,35 @@ import logo from "@/assets/logo.svg";
       <img src={logo.src} alt="logo" />
       <h1>Bookteka</h1>
     </div>
-    <div class="menu-container">
-      <button class="menu-toggle" id="menuToggle">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#000000"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="icon icon-tabler icons-tabler-outline icon-tabler-menu-2"
-          ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-            d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path
-            d="M4 18l16 0"></path></svg
-        >
-      </button>
+    <div class="container-menu-nav">
+      <div class="menu-container">
+        <IconTheme />
+        <button class="menu-toggle" id="menuToggle">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#000000"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="icon icon-tabler icons-tabler-outline icon-tabler-menu-2"
+            ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
+              d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path
+              d="M4 18l16 0"></path></svg
+          >
+        </button>
+      </div>
+      <nav class="nav-menu" id="navMenu">
+        <ul>
+          <li>
+            <a href="/#inicio" class="btn-demo"> Ver demo </a>
+          </li>
+        </ul>
+      </nav>
     </div>
-    <nav class="nav-menu" id="navMenu">
-      <ul>
-        <li>
-          <a href="/#inicio" class="btn-demo"> Ver demo </a>
-        </li>
-      </ul>
-    </nav>
-
-    <svg
-      class="header-wave"
-      viewBox="0 0 675 900"
-      preserveAspectRatio="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M262 0L262.8 21.5C263.7 43 265.3 86 258.5 128.8C251.7 171.7 236.3 214.3 221.2 257.2C206 300 191 343 189.8 385.8C188.7 428.7 201.3 471.3 213.7 514.2C226 557 238 600 238 642.8C238 685.7 226 728.3 232.8 771.2C239.7 814 265.3 857 278.2 878.5L291 900L0 900L0 0Z"
-        fill="var(--secondary-color)"></path>
-    </svg>
   </div>
 </header>
 
@@ -67,7 +60,7 @@ import logo from "@/assets/logo.svg";
     width: 100%;
     background-color: var(--primary-color);
     z-index: 10;
-    border: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .header-container {
@@ -76,14 +69,14 @@ import logo from "@/assets/logo.svg";
     margin: auto;
     display: flex;
     flex-direction: row;
-
     padding: 20px;
   }
 
-  nav {
-    width: 100%;
+  .container-menu-nav {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
   }
 
   a {
@@ -101,6 +94,9 @@ import logo from "@/assets/logo.svg";
     border-radius: 7px;
     color: white;
     font-size: 16px;
+    width: 150px;
+    display: grid;
+    place-items: center;
   }
 
   /* borde derecho */
@@ -123,6 +119,12 @@ import logo from "@/assets/logo.svg";
   li {
     font-size: 1.5rem;
     font-weight: bold;
+  }
+
+  .menu-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .menu-toggle {
@@ -151,10 +153,16 @@ import logo from "@/assets/logo.svg";
       justify-content: space-between;
     }
 
+    .container-menu-nav {
+      display: flex;
+      height: 100%;
+    }
+
     .menu-container {
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 20px;
     }
 
     .menu-toggle {

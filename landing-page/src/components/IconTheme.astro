@@ -1,0 +1,32 @@
+---
+import iconSol from "@/assets/sun.svg";
+import iconLuna from "@/assets/moon.svg";
+---
+
+<div class="hover-icon">
+  <button class="theme-button">
+    <img src={iconSol.src} alt="Modo claro" class="theme-icon dark" />
+    <img src={iconLuna.src} alt="Modo oscuro" class="theme-icon light" />
+  </button>
+</div>
+
+<style>
+  .theme-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+  }
+
+  .theme-icon {
+    width: 24px;
+    height: 24px;
+    display: none;
+  }
+
+  html[data-theme="dark"] .dark,
+  html[data-theme="light"] .light {
+    display: block;
+  }
+</style>
