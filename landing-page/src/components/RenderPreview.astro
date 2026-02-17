@@ -188,6 +188,12 @@
     color: #777;
     margin-top: 16px;
   }
+
+  @media only screen and (max-width: 1024px) {
+    .preview-section {
+      padding: 0px;
+    }
+  }
 </style>
 
 <script is:inline>
@@ -240,7 +246,6 @@
       updateRange();
     });
 
-    // 👇 importante
     updateRange();
 
     fontButtons.forEach((btn) => {

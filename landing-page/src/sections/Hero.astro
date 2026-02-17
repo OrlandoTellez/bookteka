@@ -98,4 +98,18 @@ import RenderPreview from "@/components/RenderPreview.astro";
   .preview {
     margin-top: 30px;
   }
+
+  @media only screen and (max-width: 1024px) {
+    section {
+      padding: 20px 20px 100px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .preview {
+      margin-top: 80px;
+    }
+  }
 </style>

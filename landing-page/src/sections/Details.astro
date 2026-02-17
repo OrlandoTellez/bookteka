@@ -74,7 +74,7 @@ const details = [
     padding: 120px 20px;
     display: grid;
     place-items: center;
-    background-color: var(--primary-color);
+    background-color: var(--four-color);
   }
 
   .article-container {
@@ -107,5 +107,11 @@ const details = [
 
   h2 {
     font-size: 2.23rem;
+  }
+
+  @media only screen and (max-width: 1024px) {
+    .cards {
+      padding: 0px;
+    }
   }
 </style>
