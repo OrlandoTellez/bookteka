@@ -15,6 +15,7 @@ import {
   saveHighlight,
   deleteHighlight as deleteHighlightFromDB,
 } from "@/lib/database";
+import { generateId } from "@/utils/generateId";
 
 type View = "library" | "reader" | "profile";
 
@@ -82,7 +83,7 @@ export const useBookStore = create<BookStore>((set) => ({
     totalPages?: number,
   ): Promise<Book> => {
     const newBook: Book = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       name,
       text,
       createdAt: Date.now(),
