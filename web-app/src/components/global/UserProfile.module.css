@@ -11,6 +11,7 @@
   background: var(--primary-color);
   border-bottom: 1px solid var(--border-color);
   padding: 20px 0px;
+  z-index: 2000;
 }
 
 .headerContainer {
@@ -50,37 +51,23 @@
 
 .main {
   width: 100%;
+  padding-top: 105px;
+
+  padding-inline: 20px;
+}
+
+.article {
+  width: 100%;
   margin: auto;
-  padding: 20px 0px;
   display: flex;
   flex-direction: row-reverse;
   gap: 20px;
-  padding-inline: 20px;
-  padding-top: 105px;
 }
 
 .statsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-}
-
-.statCard {
-  background: var(--primary-color);
-  border: 1px solid var(--border-color);
-  padding: 16px;
-  border-radius: 12px;
-}
-
-.statValue {
-  font-size: 22px;
-  font-weight: bold;
-  color: var(--font-color-title);
-}
-
-.statLabel {
-  font-size: 14px;
-  color: #666;
 }
 
 .card {
@@ -152,62 +139,5 @@
   text-align: center;
   color: #666;
   margin-top: 40px;
-}
-
-.streakCard {
-  background: linear-gradient(90deg, #fff7ed, #fffbeb);
-
-  border: 1px solid var(--border-color);
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.streakLeft {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.flame {
-  background: #fed7aa;
-  padding: 10px;
-  border-radius: 50%;
-}
-
-.streakNumber {
-  font-size: 28px;
-  font-weight: bold;
-  color: #f97316;
-}
-
-.streakText {
-  font-size: 14px;
-}
-
-.streakDate {
-  font-size: 12px;
-  color: #666;
-}
-
-.streakActions {
-  position: relative;
-  display: flex;
-  gap: 8px;
-}
-
-.popover {
-  position: absolute;
-  right: 0;
-  top: 40px;
-
-  border: 1px solid var(--border-color);
-  padding: 12px;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 200px;
+  width: 100%;
 }

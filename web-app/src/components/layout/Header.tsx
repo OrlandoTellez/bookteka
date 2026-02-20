@@ -36,11 +36,11 @@ export const Header = () => {
           <button onClick={toggleTheme} className={styles.buttonTheme}>
             {theme === "light" ? (
               <>
-                <img src={moon} alt="" />
+                <img src={moon} alt="moon icon" />
               </>
             ) : (
               <>
-                <img src={sun} alt="" />
+                <img src={sun} alt="sun icon" />
               </>
             )}
           </button>
@@ -51,7 +51,7 @@ export const Header = () => {
             </button>
             <div className={styles.iconProfile}>
               <Link to={"/profile"}>
-                <User size={30} color="#ebe7e0" />
+                <User size={30} color="var(--font-color-title)" />
               </Link>
             </div>
           </div>

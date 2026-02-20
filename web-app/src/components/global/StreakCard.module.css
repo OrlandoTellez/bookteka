@@ -1,0 +1,78 @@
+.streakCard {
+  position: relative;
+  background: var(--altern-color);
+  border: 1px solid #f9731633;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.streakLeft {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.flame {
+  background: var(--altern-secondary-color);
+  padding: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--secondary-color);
+}
+
+.streakNumber {
+  font-size: 28px;
+  font-weight: bold;
+  color: #f97316;
+}
+
+.streakText {
+  font-size: 14px;
+  color: var(--font-color-title);
+}
+
+.streakDate {
+  font-size: 12px;
+  color: var(--font-color-text);
+}
+
+.streakActions {
+  display: flex;
+  gap: 8px;
+  height: 100%;
+}
+
+.streakActions button {
+  padding: 10px 15px;
+  display: flex;
+  gap: 5px;
+  color: var(--primary-color);
+}
+
+.popover {
+  position: absolute;
+  top: 40px;
+  margin-top: 40px;
+  background: var(--primary-color);
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-right: 40px;
+}
+
+.popover label {
+  font-size: 20px;
+  color: var(--font-color-title);
+}
+
+.popover input {
+  background: var(--primary-color);
+  color: var(--font-color-title);
+  padding: 5px;
+}
