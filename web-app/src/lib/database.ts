@@ -28,10 +28,14 @@ interface ReaderDBSchema extends DBSchema {
     key: string;
     value: UserProfile;
   };
+  streaks: {
+    key: string;
+    value: StreakData;
+  };
 }
 
 const DB_NAME = "pdf-reader-db";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbInstance: IDBPDatabase<ReaderDBSchema> | null = null;
 
@@ -68,6 +72,11 @@ export async function getDatabase(): Promise<IDBPDatabase<ReaderDBSchema>> {
           keyPath: "id",
         });
         highlightStore.createIndex("by-bookId", "bookId");
+      }
+
+      // Store de streaks (versión 3)
+      if (!db.objectStoreNames.contains("streaks")) {
+        db.createObjectStore("streaks", { keyPath: "id" });
       }
     },
   });
@@ -220,21 +229,18 @@ export async function getTotalReadingTime(): Promise<number> {
 
 // ========== STREAK ==========
 
-const STREAK_KEY = "reading-streak";
+const STREAK_KEY = "default-streak";
 
 export async function getStreakData(): Promise<StreakData | null> {
   const db = await getDatabase();
-  const data = await db.get("userProfile", STREAK_KEY);
-  if (data && "currentStreak" in data) {
-    return data as unknown as StreakData;
-  }
-  return null;
+  const data = await db.get("streaks", STREAK_KEY);
+  return data ?? null;
 }
 
 export async function saveStreakData(streakData: StreakData): Promise<void> {
   const db = await getDatabase();
-  await db.put("userProfile", {
+  await db.put("streaks", {
     id: STREAK_KEY,
     ...streakData,
-  } as unknown as UserProfile);
+  });
 }
