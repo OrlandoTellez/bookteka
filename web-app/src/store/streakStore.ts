@@ -2,16 +2,19 @@ import { getStreakData, saveStreakData } from "@/lib/database";
 
 import type { StreakData } from "@/types/reading";
 import { create } from "zustand";
+import { getDateString } from "@/utils/time";
+
+const getTodayDate = (): string => getDateString(new Date());
 
 const getYesterdayDate = (): string => {
   const date = new Date();
   date.setDate(date.getDate() - 1);
-  return date.toDateString();
+  return getDateString(date);
 };
 
 const checkHasCompletedToday = (lastActiveDate: string | null): boolean => {
   if (!lastActiveDate) return false;
-  return lastActiveDate === new Date().toDateString();
+  return lastActiveDate === getTodayDate();
 };
 
 interface StreakWithStatus extends StreakData {
@@ -57,9 +60,21 @@ export const useStreakStore = create<StreakStore>((set) => ({
   // Completar racha del día
   completeDay: async () => {
     const { streakData } = useStreakStore.getState();
-    if (!streakData) return undefined;
 
-    const today = new Date().toDateString();
+    // Si no hay racha existente, crear una nueva con 1 día
+    if (!streakData) {
+      const today = getTodayDate();
+      const newData: StreakData = {
+        currentStreak: 1,
+        startDate: today,
+        lastActiveDate: today,
+      };
+      await saveStreakData(newData);
+      set({ streakData: { ...newData, hasCompletedToday: true } });
+      return true;
+    }
+
+    const today = getTodayDate();
     if (streakData.lastActiveDate === today) {
       return false;
     }
@@ -70,6 +85,7 @@ export const useStreakStore = create<StreakStore>((set) => ({
     if (streakData.lastActiveDate === yesterday) {
       newStreak = streakData.currentStreak + 1;
     } else {
+      // Si pasó más de un día, reiniciar la racha a 1
       newStreak = 1;
     }
 
@@ -87,8 +103,14 @@ export const useStreakStore = create<StreakStore>((set) => ({
   // Inicializar la racha(esto es para hacerlo manualmente)
   initializeStreak: async (days: number, startDate?: string) => {
     set({ isStreakLoading: true });
-    const today = new Date().toDateString();
-    const initialDate = startDate || today;
+    const today = getTodayDate();
+
+    // Si startDate es provisto, usarla como está, si no usar today
+    let initialDate = today;
+    if (startDate) {
+      // Convertir fecha de input (YYYY-MM-DD) a formato correcto
+      initialDate = startDate;
+    }
 
     const newData: StreakData = {
       currentStreak: days,

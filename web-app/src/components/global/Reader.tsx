@@ -4,6 +4,7 @@ import { TextReader } from "./TextReader";
 import { BookmarksPanel } from "./BooksmarksPanel";
 import { useBookStore } from "@/store/bookStore";
 import { useReadingTimer } from "@/hooks/useReadingTimer";
+import { useStreakStore } from "@/store/streakStore";
 import { ReadingControls, type ReadingSettings } from "./ReadingControls";
 import type { Highlight, HighlightColor, Bookmark } from "@/types/book";
 import styles from "./Reader.module.css";
@@ -37,13 +38,20 @@ export const Reader = ({ book }: ReaderProps) => {
     addHighlight,
   } = useBookStore();
   const { isRunning, sessionSeconds, start, pause } = useReadingTimer();
+  const {
+    streakData,
+    loadStreakData,
+    completeDay,
+    initializeStreak,
+    isStreakLoading,
+  } = useStreakStore();
   const [settings, setSettings] = useState<ReadingSettings>(DEFAULT_SETTINGS);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Cargar highlights y bookmarks al montar el componente
+  // Cargar datos al montar el componente
   useEffect(() => {
     const loadData = async () => {
       setIsLoadingData(true);
@@ -56,7 +64,8 @@ export const Reader = ({ book }: ReaderProps) => {
       setIsLoadingData(false);
     };
     loadData();
-  }, [book.id, loadHighlights, loadBookmarks]);
+    loadStreakData(); // Cargar datos de racha
+  }, [book.id, loadHighlights, loadBookmarks, loadStreakData]);
 
   const handleClose = () => {
     pause();
@@ -190,6 +199,14 @@ export const Reader = ({ book }: ReaderProps) => {
           isTimerRunning={isRunning}
           sessionSeconds={sessionSeconds}
           onToggleTimer={handleTimerToggle}
+          streakData={{
+            currentStreak: streakData?.currentStreak ?? 0,
+            hasCompletedToday: streakData?.hasCompletedToday ?? false,
+            startDate: streakData?.startDate ?? null,
+            onCompleteDay: completeDay,
+            onInitialize: initializeStreak,
+            isLoading: isStreakLoading,
+          }}
         />
         <ReadingControls settings={settings} onSettingsChange={setSettings} />
       </header>

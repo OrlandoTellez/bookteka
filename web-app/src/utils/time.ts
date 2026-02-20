@@ -1,6 +1,4 @@
-/**
- * Formatea segundos a formato legible
- */
+// Formatea segundos a formato legible
 export function formatTime(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -27,3 +25,11 @@ export function formatTimeShort(totalSeconds: number): string {
   }
   return `${pad(minutes)}:${pad(seconds)}`;
 }
+
+// Utilidad para obtener fecha en formato YYYY-MM-DD (sin timezone issues)
+export const getDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};

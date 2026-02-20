@@ -71,9 +71,7 @@ export const ReaderHeader = ({
             <StreakButton
               currentStreak={streakData.currentStreak}
               hasCompletedToday={streakData.hasCompletedToday}
-              startDate={streakData.startDate}
               onCompleteDay={streakData.onCompleteDay}
-              onInitialize={streakData.onInitialize}
               isLoading={streakData.isLoading}
             />
           )}
