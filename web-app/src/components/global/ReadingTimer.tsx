@@ -24,7 +24,7 @@ export const ReadingTimer = ({
       </button>
 
       <div className={styles.timeContainer}>
-        <Clock size={14} className={styles.clockIcon} />
+        <Clock size={14} color="var(--primary-color)" />
         <span
           className={`${styles.time} ${
             isRunning ? styles.running : styles.paused

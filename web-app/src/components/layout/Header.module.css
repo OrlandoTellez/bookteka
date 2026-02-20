@@ -67,3 +67,15 @@
 .buttonTheme {
   background-color: transparent;
 }
+
+.iconProfile {
+  border-radius: 50%;
+  transition: background 0.2s ease;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.iconProfile:hover {
+  background: var(--window-color);
+}
