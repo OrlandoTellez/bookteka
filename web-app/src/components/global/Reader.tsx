@@ -37,7 +37,13 @@ export const Reader = ({ book }: ReaderProps) => {
     loadHighlights,
     addHighlight,
   } = useBookStore();
-  const { isRunning, sessionSeconds, start, pause } = useReadingTimer();
+  const { isRunning, sessionSeconds, start, pause } = useReadingTimer({
+    onTimeUpdate: (seconds) => {
+      if (seconds > 0) {
+        updateReadingTime(book.id, seconds);
+      }
+    },
+  });
   const {
     streakData,
     loadStreakData,
@@ -69,8 +75,6 @@ export const Reader = ({ book }: ReaderProps) => {
 
   const handleClose = () => {
     pause();
-    // Actualizar tiempo total en la base de datos
-    updateReadingTime(book.id, sessionSeconds);
     setCurrentView("library");
   };
 
@@ -84,8 +88,6 @@ export const Reader = ({ book }: ReaderProps) => {
   const handleTimerToggle = () => {
     if (isRunning) {
       pause();
-      // Actualizar tiempo total en la base de datos
-      updateReadingTime(book.id, sessionSeconds);
     } else {
       start();
     }
@@ -168,15 +170,6 @@ export const Reader = ({ book }: ReaderProps) => {
   const handleNavigateToBookmark = useCallback((bookmark: Bookmark) => {
     window.scrollTo({ top: bookmark.scrollPosition, behavior: "smooth" });
   }, []);
-
-  // Actualizar tiempo de lectura cuando se detiene el timer
-  useEffect(() => {
-    return () => {
-      if (sessionSeconds > 0) {
-        updateReadingTime(book.id, sessionSeconds);
-      }
-    };
-  }, [sessionSeconds, book.id, updateReadingTime]);
 
   if (isLoadingData) {
     return (
