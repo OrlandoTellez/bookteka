@@ -27,8 +27,6 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-app.use("/api/auth", auth.handler);
-
 app.listen(env.PORT, () =>
   console.log(`Server initialize in http://localhost:${env.PORT}`),
 );
