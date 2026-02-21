@@ -5,6 +5,7 @@ import Profile from "@/pages/Profile";
 import Login from "@/pages/auth/Login";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { NotFound } from "@/pages/NotFound";
+import Register from "@/pages/auth/Register";
 
 export const AppRoutes = () => {
   return (
@@ -12,6 +13,7 @@ export const AppRoutes = () => {
       <Routes>
         <Route element={<App />}>
           <Route path="/auth/login" element={<Login />} />
+          <Route path="/auth/register" element={<Register />} />
           <Route
             path="/"
             element={
