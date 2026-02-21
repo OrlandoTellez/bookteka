@@ -1,6 +1,13 @@
 .header {
   width: 100%;
   border-bottom: 1px solid var(--border-color);
+  position: fixed;
+  width: 100%;
+  left: 0;
+  top: 0;
+  background: var(--primary-color);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 2000;
 }
 
 .header article {
