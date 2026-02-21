@@ -11,7 +11,7 @@
 }
 
 .modal {
-  background: #1e1e1e;
+  background: var(--primary-color);
   color: #ffffff;
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
@@ -31,12 +31,13 @@
 .title {
   font-size: 1.1rem;
   font-weight: 600;
+  color: var(--font-color-title);
 }
 
 .cancelButton {
   background: transparent;
   border: none;
-  color: #bbbbbb;
+  color: var(--font-color-text);
   cursor: pointer;
   font-size: 0.9rem;
   transition: color 0.2s ease;

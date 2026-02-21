@@ -4,6 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 16px;
+  background-color: var(--primary-color);
 }
 
 .dropzone {
@@ -13,25 +14,23 @@
   padding: 48px;
   border-radius: 20px;
   border: 2px dashed #d1d5db;
-  background-color: #f9fafb;
+  background-color: var(--four-color);
   cursor: pointer;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   transition: all 0.3s ease;
 }
 
 .dropzone:hover {
-  border-color: #3b82f6;
-  background-color: #eef2ff;
+  border-color: var(--secondary-color);
+  background-color: var(--primary-color);
 }
 
 .dragging {
   border-color: #2563eb;
-  background-color: #dbeafe;
+  background-color: var(--primary-color);
   transform: scale(1.02);
 }
 
@@ -51,7 +50,7 @@
   margin-bottom: 24px;
   padding: 20px;
   border-radius: 9999px;
-  background-color: #e5e7eb;
+  background-color: var(--secondary-color);
   transition: all 0.3s ease;
 }
 
@@ -62,30 +61,30 @@
 .icon {
   width: 48px;
   height: 48px;
-  color: #6b7280;
+  color: var(--primary-color);
   transition: color 0.3s ease;
 }
 
 .iconActive {
-  color: #2563eb;
+  color: var(--primary-color);
 }
 
 .title {
   margin-bottom: 8px;
   font-size: 20px;
   font-weight: 500;
-  color: #111827;
+  color: var(--font-color-title);
 }
 
 .description {
   text-align: center;
-  color: #6b7280;
+  color: var(--font-color-text);
 }
 
 .supportText {
   margin-top: 16px;
   font-size: 14px;
-  color: rgba(107, 114, 128, 0.7);
+  color: var(--font-color-text);
 }
 
 /* Animación sutil para loading */
