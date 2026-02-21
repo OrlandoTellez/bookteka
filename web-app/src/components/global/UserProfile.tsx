@@ -12,6 +12,7 @@ import styles from "./UserProfile.module.css";
 import { Link } from "react-router-dom";
 import { StatCard } from "./StatCard";
 import { StreakCard } from "./StreakCard";
+import { LogoutButton } from "../auth/LogoutButton";
 
 interface UserProfileProps {
   books: Book[];
@@ -163,6 +164,12 @@ const UserProfile = ({
               Aún no tienes libros. ¡Añade uno para empezar!
             </div>
           )}
+        </article>
+
+        <article className={styles.config}>
+          <div className={styles.logoutContainer}>
+            <LogoutButton />
+          </div>
         </article>
       </main>
     </div>

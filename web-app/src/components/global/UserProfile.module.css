@@ -141,3 +141,18 @@
   margin-top: 40px;
   width: 100%;
 }
+
+.config {
+  padding: 20px 0px;
+}
+
+.config h4 {
+  font-size: 1.5rem;
+  color: var(--font-color-title);
+}
+
+.logoutContainer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: end;
+}
