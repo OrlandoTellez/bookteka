@@ -1,6 +1,8 @@
 ---
 import logoDark from "@/assets/logoDark.svg";
 import logoLight from "@/assets/logoLight.svg";
+import githubDark from "@/assets/githubDark.svg";
+import githubLight from "@/assets/githubLight.svg";
 ---
 
 <footer>
@@ -12,6 +14,10 @@ import logoLight from "@/assets/logoLight.svg";
       <h3>Bookteka</h3>
     </article>
     <p>Hecho con cariño para los amantes de la lectura.</p>
+    <a href="https://github.com/OrlandoTellez/bookteka" target="_blank">
+      <img src={githubDark.src} alt="github icon" class="logo dark" />
+      <img src={githubLight.src} alt="github icon" class="logo light" />
+    </a>
   </div>
 </footer>
 
@@ -42,10 +48,12 @@ import logoLight from "@/assets/logoLight.svg";
     margin: auto;
     display: flex;
     justify-content: space-between;
+    align-items: center;
   }
 
   p {
     font-size: 16px;
+    margin-right: 100px;
   }
 
   img {
@@ -59,6 +67,10 @@ import logoLight from "@/assets/logoLight.svg";
       align-items: center;
       text-align: center;
       gap: 10px;
+    }
+
+    p {
+      margin-right: 0px;
     }
   }
 </style>

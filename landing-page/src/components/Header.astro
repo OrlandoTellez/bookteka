@@ -3,6 +3,8 @@ import logoDark from "@/assets/logoDark.svg";
 import logoLight from "@/assets/logoLight.svg";
 import menuDark from "@/assets/menuDark.svg";
 import menuLight from "@/assets/menuLight.svg";
+import githubDark from "@/assets/githubDark.svg";
+import githubLight from "@/assets/githubLight.svg";
 import IconTheme from "@/components/IconTheme.astro";
 ---
 
@@ -16,6 +18,10 @@ import IconTheme from "@/components/IconTheme.astro";
     <div class="container-menu-nav">
       <div class="menu-container">
         <IconTheme />
+        <a href="https://github.com/OrlandoTellez/bookteka" target="_blank">
+          <img src={githubDark.src} alt="github icon" class="logo dark" />
+          <img src={githubLight.src} alt="github icon" class="logo light" />
+        </a>
         <button class="menu-toggle" id="menuToggle">
           <img src={menuDark.src} alt="menu icon" class="logo dark" />
           <img src={menuLight.src} alt="menu icon" class="logo light" />
@@ -125,6 +131,7 @@ import IconTheme from "@/components/IconTheme.astro";
     width: 100%;
     display: flex;
     justify-content: center;
+    gap: 20px;
   }
 
   .menu-toggle {
