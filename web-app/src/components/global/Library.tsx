@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import { CardBookList } from "./CardBookList";
+import { normalizeText } from "@/utils/text";
 
 type SortBy = "recent" | "name" | "time";
 type FilterStatus = "all" | "reading" | "unstarted";
@@ -65,8 +66,8 @@ export const Library = () => {
 
     // Search
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter((b) => b.name.toLowerCase().includes(q));
+      const q = normalizeText(searchQuery);
+      filtered = filtered.filter((b) => normalizeText(b.name).includes(q));
     }
 
     // Filter
