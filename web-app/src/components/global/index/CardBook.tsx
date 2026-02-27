@@ -4,7 +4,7 @@ import styles from "./CardBook.module.css";
 import type { Book } from "@/types/book";
 
 import { formatTime } from "@/utils/time";
-import { DeleteModal } from "../modals/DeleteModal";
+import { DeleteModal } from "@/components/modals/DeleteModal";
 
 interface BookCardProps {
   book: Book;

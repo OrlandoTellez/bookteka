@@ -3,7 +3,7 @@ import { useState } from "react";
 import { formatTime } from "@/utils/time";
 import type { Book as BookType } from "@/types/book";
 import styles from "./CardBookList.module.css";
-import { DeleteModal } from "../modals/DeleteModal";
+import { DeleteModal } from "@/components/modals/DeleteModal";
 
 interface BookListItemProps {
   book: BookType;

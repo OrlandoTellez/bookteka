@@ -1,4 +1,4 @@
-import { Library } from "@/components/global/Library";
+import { Library } from "@/components/global/index/Library";
 
 const Index = () => {
   return (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import UserProfile from "@/components/global/UserProfile";
+import UserProfile from "@/components/global/profile/UserProfile";
 import { EditTimeModal } from "@/components/modals/EditTimeModal";
 import { useBookStore } from "@/store/bookStore";
 import type { Book } from "@/types/book";

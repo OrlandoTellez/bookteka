@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { CardBookList } from "./CardBookList";
 import { normalizeText } from "@/utils/text";
-import { ShowUploaderModal } from "../modals/ShowUploaderModal";
+import { ShowUploaderModal } from "@/components/modals/ShowUploaderModal";
 
 type SortBy = "recent" | "name" | "time";
 type FilterStatus = "all" | "reading" | "unstarted";

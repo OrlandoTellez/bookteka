@@ -1,6 +1,5 @@
-import { Flame, Check, Settings } from "lucide-react";
+import { Flame, Check } from "lucide-react";
 import styles from "./StreakButton.module.css";
-import { useState } from "react";
 import { toast } from "sonner";
 
 interface StreakButtonProps {
@@ -49,9 +48,8 @@ export const StreakButton = ({
       <button
         onClick={handleCompleteDay}
         disabled={isLoading || hasCompletedToday}
-        className={`${styles.completeButton} ${
-          hasCompletedToday ? styles.completed : styles.notCompleted
-        }`}
+        className={`${styles.completeButton} ${hasCompletedToday ? styles.completed : styles.notCompleted
+          }`}
       >
         {hasCompletedToday ? (
           <>

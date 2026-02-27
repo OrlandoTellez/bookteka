@@ -12,7 +12,7 @@ import styles from "./UserProfile.module.css";
 import { Link } from "react-router-dom";
 import { StatCard } from "./StatCard";
 import { StreakCard } from "./StreakCard";
-import { LogoutButton } from "../auth/LogoutButton";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { CardProfile } from "./CardProfile";
 
 interface UserProfileProps {
