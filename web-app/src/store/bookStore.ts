@@ -16,6 +16,9 @@ import {
   deleteHighlight as deleteHighlightFromDB,
 } from "@/lib/database";
 import { generateId } from "@/utils/generateId";
+import { authClient } from "@/lib/auth-client";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 type View = "library" | "reader" | "profile";
 
@@ -29,7 +32,7 @@ interface BookStore {
   currentBook: Book | null;
 
   // Acciones CRUD
-  addBook: (name: string, text: string, totalPages?: number) => Promise<Book>;
+  addBook: (name: string, text: string, totalPages?: number, file?: File) => Promise<Book>;
   deleteBook: (id: string) => Promise<void>;
   getBookById: (id: string) => Promise<Book | null>;
   loadBooks: () => Promise<void>;
@@ -81,9 +84,39 @@ export const useBookStore = create<BookStore>((set) => ({
     name: string,
     text: string,
     totalPages?: number,
+    file?: File,
   ): Promise<Book> => {
+    let bookId: string;
+    let cloudBookId: string | undefined;
+
+    if (file) {
+      try {
+        const formData = new FormData();
+        formData.append("pdf", file);
+        formData.append("title", name);
+
+        const response = await fetch(`${API_URL}/api/books/upload`, {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Error al subir el libro al servidor");
+        }
+
+        const cloudBook = await response.json();
+        cloudBookId = cloudBook.id;
+        console.log("Libro subido al backend:", cloudBook);
+      } catch (error) {
+        console.error("Error al subir al backend:", error);
+      }
+    }
+
+    bookId = cloudBookId || generateId();
+
     const newBook: Book = {
-      id: generateId(),
+      id: bookId,
       name,
       text,
       createdAt: Date.now(),
@@ -91,6 +124,7 @@ export const useBookStore = create<BookStore>((set) => ({
       readingTimeSeconds: 0,
       scrollPosition: 0,
       totalPages,
+      fileBlob: file,
     };
 
     try {
@@ -107,7 +141,25 @@ export const useBookStore = create<BookStore>((set) => ({
   // Eliminar un libro
   deleteBook: async (id: string) => {
     try {
+      const session = await authClient.getSession();
+
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
+      const response = await fetch(`http://localhost:3000/api/books/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error al eliminar el libro del servidor");
+      }
+
+      // Eliminar de la base de datos local (IndexedDB)
       await deleteBookFromDB(id);
+
       set((state) => ({
         books: state.books.filter((book) => book.id !== id),
       }));

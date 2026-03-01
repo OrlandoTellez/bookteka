@@ -12,6 +12,7 @@ export interface Book {
   readingTimeSeconds: number;
   scrollPosition: number;
   totalPages?: number;
+  fileBlob?: File
 }
 
 export interface Bookmark {
