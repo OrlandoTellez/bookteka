@@ -39,6 +39,9 @@ export const Library = () => {
     showUploader,
     setShowUploader,
     addBook,
+    isProcessingPdf,
+    pdfProgress,
+    downloadingBookId,
   } = useBookStore();
 
   useEffect(() => {
@@ -128,6 +131,8 @@ export const Library = () => {
               book={book}
               onOpen={handleOpenBook}
               onDelete={handleDelete}
+              isDownloading={isProcessingPdf && downloadingBookId === book.id}
+              downloadProgress={downloadingBookId === book.id ? pdfProgress : undefined}
             />
           ))}
         </div>
@@ -143,6 +148,8 @@ export const Library = () => {
               book={book}
               onOpen={handleOpenBook}
               onDelete={handleDelete}
+              isDownloading={isProcessingPdf && downloadingBookId === book.id}
+              downloadProgress={downloadingBookId === book.id ? pdfProgress : undefined}
             />
           ))}
         </div>

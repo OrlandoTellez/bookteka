@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authClient } from "@/lib/auth-client.ts";
+import { clearDatabase, resetDatabase, syncBooksToCloud } from "@/lib/database";
+import { toast } from "sonner";
 
 export const LogoutButton = () => {
   const navigate = useNavigate();
@@ -10,6 +12,23 @@ export const LogoutButton = () => {
     setLoading(true);
 
     try {
+      // Primero sincronizar datos locales al servidor antes de borrar
+      toast.info("Guardando datos...");
+      try {
+        await syncBooksToCloud();
+        console.log("Datos sincronizados al cerrar sesión");
+      } catch (syncError) {
+        console.warn("Error al sincronizar al logout:", syncError);
+        // Continuar con el logout aunque falle la sincronización
+      }
+
+      // Eliminar la base de datos local
+      await clearDatabase();
+
+      // Reiniciar la conexión a la base de datos
+      await resetDatabase();
+
+      // Cerrar sesión en el servidor
       const { error } = await authClient.signOut();
 
       if (error) {

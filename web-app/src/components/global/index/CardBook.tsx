@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { Book as BookIcon, Trash2, Clock } from "lucide-react";
+import { Book as BookIcon, Trash2, Clock, Download } from "lucide-react";
 import styles from "./CardBook.module.css";
 import type { Book } from "@/types/book";
 
 import { formatTime } from "@/utils/time";
 import { DeleteModal } from "@/components/modals/DeleteModal";
+import { Spinner } from "@/components/common/Spinner";
 
 interface BookCardProps {
   book: Book;
   onOpen: (book: Book) => void;
   onDelete: (id: string) => void;
+  isDownloading?: boolean;
+  downloadProgress?: number;
 }
 
-export const CardBook = ({ book, onOpen, onDelete }: BookCardProps) => {
+export const CardBook = ({ book, onOpen, onDelete, isDownloading, downloadProgress }: BookCardProps) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const lastRead = new Date(book.lastReadAt).toLocaleDateString("es-ES", {
@@ -56,8 +59,21 @@ export const CardBook = ({ book, onOpen, onDelete }: BookCardProps) => {
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.primaryButton} onClick={() => onOpen(book)}>
-            {book.scrollPosition > 0 ? "Continuar leyendo" : "Empezar a leer"}
+          <button
+            className={styles.primaryButton}
+            onClick={() => onOpen(book)}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <>
+                <Spinner />
+                Descargando {downloadProgress !== undefined ? `${Math.round(downloadProgress)}%` : "..."}
+              </>
+            ) : book.scrollPosition > 0 ? (
+              "Continuar leyendo"
+            ) : (
+              "Empezar a leer"
+            )}
           </button>
 
           <button
