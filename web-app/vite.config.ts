@@ -10,4 +10,12 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ["pdfjs-dist"],
+  },
+  server: {
+    mimeTypes: {
+      ".mjs": "application/javascript",
+    },
+  },
 });

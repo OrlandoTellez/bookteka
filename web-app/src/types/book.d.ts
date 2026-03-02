@@ -8,11 +8,11 @@ export interface Book {
   lastReadAt: number;
   text: string;
   createdAt: number;
-  lastReadAt: number;
-  readingTimeSeconds: number;
-  scrollPosition: number;
   totalPages?: number;
-  fileBlob?: File
+  fileBlob?: File;
+  // Campos para sincronización con cloud
+  fileUrl?: string;
+  fileKey?: string;
 }
 
 export interface Bookmark {

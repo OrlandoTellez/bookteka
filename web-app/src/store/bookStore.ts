@@ -14,9 +14,12 @@ import {
   getHighlightsByBook,
   saveHighlight,
   deleteHighlight as deleteHighlightFromDB,
+  setCurrentUserId,
+  syncBooksFromCloud,
 } from "@/lib/database";
 import { generateId } from "@/utils/generateId";
 import { authClient } from "@/lib/auth-client";
+import { processBookForReading } from "@/lib/pdfService";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -30,12 +33,17 @@ interface BookStore {
   showUploader: boolean;
   currentView: View;
   currentBook: Book | null;
+  isSyncing: boolean;
+  isProcessingPdf: boolean;
+  pdfProgress: number;
+  downloadingBookId: string | null;
 
   // Acciones CRUD
   addBook: (name: string, text: string, totalPages?: number, file?: File) => Promise<Book>;
   deleteBook: (id: string) => Promise<void>;
   getBookById: (id: string) => Promise<Book | null>;
   loadBooks: () => Promise<void>;
+  syncBooks: () => Promise<void>;
 
   // Acciones de lectura
   updateReadingTime: (id: string, seconds: number) => Promise<void>;
@@ -66,16 +74,50 @@ export const useBookStore = create<BookStore>((set) => ({
   showUploader: false,
   currentView: "library",
   currentBook: null,
+  isSyncing: false,
+  isProcessingPdf: false,
+  pdfProgress: 0,
+  downloadingBookId: null,
 
-  // Cargar todos los libros
+  // Cargar todos los libros (desde cache local)
   loadBooks: async () => {
     set({ isLoading: true, error: null });
     try {
+      const { data: session } = await authClient.getSession();
+      if (session?.user?.id) {
+        // Establecer el usuario actual en la base de datos
+        setCurrentUserId(session.user.id);
+      }
+
       const loadedBooks = await getAllBooks();
       set({ books: loadedBooks, isLoading: false });
     } catch (error) {
       console.error("Error loading books:", error);
       set({ error: "Error al cargar los libros", isLoading: false });
+    }
+  },
+
+  // Sincronizar libros desde la nube
+  syncBooks: async () => {
+    set({ isSyncing: true, error: null });
+    try {
+      const { data: session } = await authClient.getSession();
+      if (!session?.user?.id) {
+        throw new Error("No hay sesión activa");
+      }
+
+      // Establecer el usuario actual en la base de datos
+      setCurrentUserId(session.user.id);
+
+      // Sincronizar desde la nube
+      await syncBooksFromCloud();
+
+      // Recargar libros locales después de sincronizar
+      const loadedBooks = await getAllBooks();
+      set({ books: loadedBooks, isSyncing: false });
+    } catch (error) {
+      console.error("Error syncing books:", error);
+      set({ error: "Error al sincronizar libros", isSyncing: false });
     }
   },
 
@@ -86,6 +128,13 @@ export const useBookStore = create<BookStore>((set) => ({
     totalPages?: number,
     file?: File,
   ): Promise<Book> => {
+    // Verificar que hay sesión activa y establecer el usuario actual
+    const { data: session } = await authClient.getSession();
+    if (!session?.user?.id) {
+      throw new Error("No hay sesión activa");
+    }
+    setCurrentUserId(session.user.id);
+
     let bookId: string;
     let cloudBookId: string | undefined;
 
@@ -141,7 +190,7 @@ export const useBookStore = create<BookStore>((set) => ({
   // Eliminar un libro
   deleteBook: async (id: string) => {
     try {
-      const session = await authClient.getSession();
+      const { data: session } = await authClient.getSession();
 
       if (!session) {
         throw new Error("No hay sesión activa");
@@ -173,8 +222,52 @@ export const useBookStore = create<BookStore>((set) => ({
   // Obtener un libro por ID
   getBookById: async (id: string): Promise<Book | null> => {
     try {
-      const book = await getBook(id);
-      return book || null;
+      let book = await getBook(id);
+
+      if (!book) return null;
+
+      // Verificar si necesita descargar el PDF
+      const needsDownload = book.fileUrl && (!book.text || book.text.length < 10);
+
+      if (needsDownload) {
+        set({ isProcessingPdf: true, pdfProgress: 0, downloadingBookId: id });
+
+        try {
+          // Descargar y procesar el PDF
+          const processedBook = await processBookForReading(book, (progress) => {
+            set({ pdfProgress: progress });
+          });
+
+          // IMPORTANTE: Preservar el progreso de lectura existente al procesar el PDF
+          const bookWithProgress: Book = {
+            ...processedBook,
+            readingTimeSeconds: book.readingTimeSeconds,
+            scrollPosition: book.scrollPosition,
+            lastReadAt: book.lastReadAt,
+          };
+
+          // Guardar el libro actualizado en IndexedDB
+          await saveBook(bookWithProgress);
+
+          // Actualizar en la lista de libros
+          set((state) => ({
+            books: state.books.map((b) =>
+              b.id === id ? bookWithProgress : b
+            ),
+            // También actualizar currentBook si es el mismo libro
+            currentBook: state.currentBook?.id === id ? bookWithProgress : state.currentBook,
+          }));
+
+          book = bookWithProgress;
+        } catch (pdfError) {
+          console.error("Error downloading PDF:", pdfError);
+          set({ error: "Error al procesar el PDF" });
+        } finally {
+          set({ isProcessingPdf: false, pdfProgress: 0, downloadingBookId: null });
+        }
+      }
+
+      return book;
     } catch (error) {
       console.error("Error getting book:", error);
       set({ error: "Error al obtener el libro" });
