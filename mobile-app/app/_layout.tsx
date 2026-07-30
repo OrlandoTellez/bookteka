@@ -9,7 +9,7 @@ import { useUserPreferences } from "@/shared/store/userPreferencesStore"
 import { ActivityIndicator, StatusBar, View } from "react-native"
 import { THEME } from "@/shared/lib/theme"
 
-type RootRoutes = "(tabs)" | "(auth)" | "reader/[id]";
+type RootRoutes = "(tabs)" | "(auth)" | "(onboarding)" | "reader/[id]";
 
 interface StackConfig {
   name: RootRoutes;
@@ -19,6 +19,10 @@ interface StackConfig {
 }
 
 const ROOT_STACK: StackConfig[] = [
+  {
+    name: "(onboarding)",
+    headerShown: false
+  },
   {
     name: "(tabs)",
     headerShown: false
