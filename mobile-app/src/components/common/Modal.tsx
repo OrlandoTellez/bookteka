@@ -6,6 +6,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native"
 import { X } from "lucide-react-native"
 import { THEME } from "@/shared/lib/theme"
@@ -41,49 +42,57 @@ export function Modal({
     >
       <Pressable style={styles.overlay} onPress={onClose}>
         <KeyboardAvoidingView
+          style={styles.keyboardView}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <Pressable
             style={styles.content}
             onPress={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>{title}</Text>
-              <Pressable onPress={onClose} style={styles.closeButton}>
-                <X size={20} color={THEME.colors.fontColorTitle} />
-              </Pressable>
-            </View>
+            <ScrollView
+              bounces={false}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollContent}
+            >
+              {/* Header */}
+              <View style={styles.header}>
+                <Text style={styles.title}>{title}</Text>
+                <Pressable onPress={onClose} style={styles.closeButton}>
+                  <X size={20} color={THEME.colors.fontColorTitle} />
+                </Pressable>
+              </View>
 
-            {/* Body */}
-            <View style={styles.body}>{children}</View>
+              {/* Body */}
+              <View style={styles.body}>{children}</View>
 
-            {/* Actions */}
-            {actions && actions.length > 0 && (
-              <View style={styles.footer}>
-                {actions.map((action, index) => (
-                  <Pressable
-                    key={index}
-                    onPress={action.onPress}
-                    style={[
-                      styles.actionButton,
-                      action.variant === "danger" && styles.actionDanger,
-                      action.variant === "cancel" && styles.actionCancel,
-                    ]}
-                  >
-                    <Text
+              {/* Actions */}
+              {actions && actions.length > 0 && (
+                <View style={styles.footer}>
+                  {actions.map((action, index) => (
+                    <Pressable
+                      key={index}
+                      onPress={action.onPress}
                       style={[
-                        styles.actionText,
-                        action.variant === "danger" && styles.actionTextDanger,
-                        action.variant === "cancel" && styles.actionTextCancel,
+                        styles.actionButton,
+                        action.variant === "danger" && styles.actionDanger,
+                        action.variant === "cancel" && styles.actionCancel,
                       ]}
                     >
-                      {action.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
+                      <Text
+                        style={[
+                          styles.actionText,
+                          action.variant === "danger" && styles.actionTextDanger,
+                          action.variant === "cancel" && styles.actionTextCancel,
+                        ]}
+                      >
+                        {action.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
           </Pressable>
         </KeyboardAvoidingView>
       </Pressable>
@@ -99,12 +108,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 24,
   },
+  keyboardView: {
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "85%",
+    flexShrink: 1,
+  },
   content: {
     backgroundColor: THEME.colors.primaryColor,
     borderRadius: 5,
-    width: "100%",
-    maxWidth: 400,
     overflow: "hidden",
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     flexDirection: "row",

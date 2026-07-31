@@ -226,7 +226,7 @@ export function PDFUploader({ visible, onClose, onUploadComplete }: PDFUploaderP
 }
 
 const styles = StyleSheet.create({
-  body: { gap: 16, height: 400 },
+  body: { gap: 16 },
   dropzone: {
     alignItems: "center",
     justifyContent: "center",
