@@ -1,8 +1,11 @@
+mod shared;
+
 use axum::{Router, routing::get};
+use std::net::{IpAddr, Ipv4Addr};
 use tokio::net::TcpListener;
 
 const PORT: u16 = 4000;
-const HOST: &str = "0.0.0.0";
+const HOST: IpAddr = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
 
 #[tokio::main]
 async fn main() {
