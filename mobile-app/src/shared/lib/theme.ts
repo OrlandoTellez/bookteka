@@ -11,8 +11,7 @@ export const THEME = {
     previewColor: "#171412",
     fontColorTitle: "#ebe7e0",
     fontColorText: "#7e7367",
-    borderColor: "#3f3831;"
-
+    borderColor: "#3f3831",
   }
 }
 
