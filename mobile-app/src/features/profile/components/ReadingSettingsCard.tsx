@@ -208,7 +208,7 @@ export function ReadingSettingsCard() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: THEME.colors.cardColor, borderRadius: 12, padding: 16,
+    backgroundColor: THEME.colors.cardColor, borderRadius: 5, padding: 16,
     borderWidth: 1, borderColor: THEME.colors.borderColor, gap: 12,
   },
   cardPressed: { opacity: 0.85 },
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   title: { fontSize: 16, fontWeight: "700", color: THEME.colors.fontColorTitle },
   resetButton: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 28, height: 28, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
   },
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   previewGrid: { flexDirection: "row", gap: 8 },
   previewItem: {
     flex: 1, backgroundColor: THEME.colors.thirdColor,
-    borderRadius: 8, padding: 10, alignItems: "center", gap: 2,
+    borderRadius: 5, padding: 10, alignItems: "center", gap: 2,
   },
   previewLabel: {
     fontSize: 11, fontWeight: "600", color: THEME.colors.fontColorText,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     maxHeight: "70%",
   },
   handleBar: {
-    width: 36, height: 4, borderRadius: 2,
+    width: 36, height: 4, borderRadius: 5,
     backgroundColor: THEME.colors.borderColor, alignSelf: "center", marginBottom: 12,
   },
   sheetHeader: {
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: { fontSize: 18, fontWeight: "700", color: THEME.colors.fontColorTitle },
   closeButton: {
-    width: 32, height: 32, borderRadius: 16,
+    width: 32, height: 32, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
   },
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   controlLabel: { fontSize: 14, fontWeight: "600", color: THEME.colors.fontColorText },
   incrementRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   stepper: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
   },
@@ -279,13 +279,13 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"], minWidth: 36, textAlign: "center",
   },
   trackContainer: {
-    flex: 1, height: 6, borderRadius: 3,
+    flex: 1, height: 6, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor, overflow: "hidden",
   },
-  trackFill: { height: "100%", borderRadius: 3, backgroundColor: THEME.colors.secondaryColor },
+  trackFill: { height: "100%", borderRadius: 5, backgroundColor: THEME.colors.secondaryColor },
   fontOptions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   fontOption: {
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     borderWidth: 1.5, borderColor: "transparent",
   },

@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     maxHeight: "70%",
   },
   handleBar: {
-    width: 36, height: 4, borderRadius: 2,
+    width: 36, height: 4, borderRadius: 5,
     backgroundColor: THEME.colors.borderColor, alignSelf: "center", marginBottom: 12,
   },
   sheetHeader: {
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: { fontSize: 18, fontWeight: "700", color: THEME.colors.fontColorTitle },
   closeButton: {
-    width: 32, height: 32, borderRadius: 16,
+    width: 32, height: 32, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
   },
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   controlLabel: { fontSize: 14, fontWeight: "600", color: THEME.colors.fontColorText },
   incrementRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   stepper: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
   },
@@ -199,13 +199,13 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"], minWidth: 36, textAlign: "center",
   },
   trackContainer: {
-    flex: 1, height: 6, borderRadius: 3,
+    flex: 1, height: 6, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor, overflow: "hidden",
   },
-  trackFill: { height: "100%", borderRadius: 3, backgroundColor: THEME.colors.secondaryColor },
+  trackFill: { height: "100%", borderRadius: 5, backgroundColor: THEME.colors.secondaryColor },
   fontOptions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   fontOption: {
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     borderWidth: 1.5, borderColor: "transparent",
   },

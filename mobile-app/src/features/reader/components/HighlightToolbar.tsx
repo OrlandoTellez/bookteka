@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   colors: { flexDirection: "row", gap: 10, flex: 1 },
   colorCircle: {
-    width: 34, height: 34, borderRadius: 17,
+    width: 34, height: 34, borderRadius: 5,
     borderWidth: 2, borderColor: "rgba(255,255,255,0.2)",
   },
   colorCirclePressed: { opacity: 0.6, transform: [{ scale: 0.9 }] },
@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
   removeButton: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 10, paddingVertical: 6,
-    borderRadius: 8, backgroundColor: "rgba(255, 68, 68, 0.1)",
+    borderRadius: 5, backgroundColor: "rgba(255, 68, 68, 0.1)",
   },
   removeButtonPressed: { opacity: 0.7 },
   removeText: { fontSize: 13, fontWeight: "600", color: "#ff4444" },
   removePlaceholder: { minWidth: 60 },
   closeButton: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 36, height: 36, borderRadius: 5,
     justifyContent: "center", alignItems: "center",
   },
   closeButtonPressed: { opacity: 0.7, backgroundColor: THEME.colors.thirdColor },

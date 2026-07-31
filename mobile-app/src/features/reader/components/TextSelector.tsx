@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   headerButton: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: THEME.colors.thirdColor,
-    borderRadius: 10,
+    borderRadius: 5,
   },
   instructionsText: {
     fontSize: 13,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 5,
     backgroundColor: THEME.colors.fourColor,
     minHeight: 200,
   },
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: THEME.colors.thirdColor,

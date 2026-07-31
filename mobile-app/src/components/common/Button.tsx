@@ -98,7 +98,7 @@ function getIconColor(variant: ButtonVariant): string {
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 10,
+    borderRadius: 5,
     paddingVertical: 14,
     paddingHorizontal: 24,
     opacity: 1,

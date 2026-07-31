@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   headerButton: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 5,
     backgroundColor: THEME.colors.secondaryColor,
   },
   backButtonPressed: {

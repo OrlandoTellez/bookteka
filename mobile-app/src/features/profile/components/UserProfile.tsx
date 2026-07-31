@@ -210,12 +210,12 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 32, fontWeight: "700", color: THEME.colors.fontColorTitle },
   headerSubtitle: { fontSize: 14, color: THEME.colors.fontColorText, marginTop: 4 },
   userCard: {
-    backgroundColor: THEME.colors.cardColor, borderRadius: 12, padding: 16,
+    backgroundColor: THEME.colors.cardColor, borderRadius: 5, padding: 16,
     borderWidth: 1, borderColor: THEME.colors.borderColor,
   },
   userRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   avatarPlaceholder: {
-    width: 48, height: 48, borderRadius: 24,
+    width: 48, height: 48, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
   },
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: THEME.colors.fontColorTitle },
   bookList: {
-    backgroundColor: THEME.colors.cardColor, borderRadius: 12,
+    backgroundColor: THEME.colors.cardColor, borderRadius: 5,
     borderWidth: 1, borderColor: THEME.colors.borderColor, overflow: "hidden",
   },
   bookRow: {
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, color: THEME.colors.fontColorText, textAlign: "center" },
   signOutButton: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: THEME.colors.cardColor, borderRadius: 12, padding: 16,
+    backgroundColor: THEME.colors.cardColor, borderRadius: 5, padding: 16,
     borderWidth: 1, borderColor: "#ef4444", minHeight: 52,
   },
   signOutButtonPressed: { opacity: 0.85 },

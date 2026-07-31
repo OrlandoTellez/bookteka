@@ -32,7 +32,7 @@ export function ReadingTimer({ isRunning, sessionSeconds, onToggle }: ReadingTim
 const styles = StyleSheet.create({
   container: { flexDirection: "row", alignItems: "center", gap: 6 },
   toggleButton: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 28, height: 28, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
   },

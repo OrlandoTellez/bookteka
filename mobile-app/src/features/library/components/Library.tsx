@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   searchContainer: { paddingHorizontal: 16, paddingBottom: 10 },
   searchBar: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: THEME.colors.fourColor, borderRadius: 12,
+    backgroundColor: THEME.colors.fourColor, borderRadius: 5,
     paddingHorizontal: 14, gap: 10,
     borderWidth: 1, borderColor: THEME.colors.borderColor,
   },
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   viewToggle: {
     flexDirection: "row",
     borderWidth: 1, borderColor: THEME.colors.borderColor,
-    borderRadius: 8, overflow: "hidden",
+    borderRadius: 5, overflow: "hidden",
   },
   viewButton: {
     paddingVertical: 8, paddingHorizontal: 10,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   emptyScroll: { flexGrow: 1, justifyContent: "center" },
   fab: {
     position: "absolute", right: 20, bottom: 20,
-    width: 56, height: 56, borderRadius: 28,
+    width: 56, height: 56, borderRadius: 5,
     backgroundColor: THEME.colors.secondaryColor,
     justifyContent: "center", alignItems: "center",
     elevation: 6, shadowColor: "#000",

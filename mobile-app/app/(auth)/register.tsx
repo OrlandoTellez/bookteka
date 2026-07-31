@@ -224,7 +224,7 @@ function makeStyles(theme: ThemeTokens) {
     },
     errorContainer: {
       backgroundColor: theme.third,
-      borderRadius: 12,
+      borderRadius: 5,
       padding: 12,
       marginBottom: 16,
       borderLeftWidth: 4,
@@ -248,7 +248,7 @@ function makeStyles(theme: ThemeTokens) {
     },
     input: {
       backgroundColor: theme.card,
-      borderRadius: 12,
+      borderRadius: 5,
       paddingHorizontal: 16,
       paddingVertical: 14,
       fontSize: 16,
@@ -262,7 +262,7 @@ function makeStyles(theme: ThemeTokens) {
     },
     passwordInput: {
       backgroundColor: theme.card,
-      borderRadius: 12,
+      borderRadius: 5,
       paddingHorizontal: 16,
       paddingVertical: 14,
       paddingRight: 48,
@@ -278,7 +278,7 @@ function makeStyles(theme: ThemeTokens) {
     },
     button: {
       backgroundColor: theme.secondary,
-      borderRadius: 12,
+      borderRadius: 5,
       paddingVertical: 16,
       alignItems: "center",
       justifyContent: "center",

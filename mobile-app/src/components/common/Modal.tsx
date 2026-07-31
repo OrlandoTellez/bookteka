@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   content: {
     backgroundColor: THEME.colors.primaryColor,
-    borderRadius: 16,
+    borderRadius: 5,
     width: "100%",
     maxWidth: 400,
     overflow: "hidden",
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 5,
     backgroundColor: THEME.colors.secondaryColor,
     alignItems: "center",
   },

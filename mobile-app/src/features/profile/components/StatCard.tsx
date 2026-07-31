@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: THEME.colors.cardColor,
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 14,
     alignItems: "center",
     borderWidth: 1,
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   iconWrapper: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 36, height: 36, borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center", alignItems: "center",
     marginBottom: 4,

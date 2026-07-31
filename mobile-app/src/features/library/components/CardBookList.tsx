@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: THEME.colors.cardColor,
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 14,
     borderWidth: 1,
     borderColor: THEME.colors.borderColor,
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 44,
     height: 44,
-    borderRadius: 11,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
   },

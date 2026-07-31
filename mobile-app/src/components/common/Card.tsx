@@ -30,7 +30,7 @@ export function Card({ children, onPress, style }: CardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: THEME.colors.cardColor,
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 16,
     borderWidth: 1,
     borderColor: THEME.colors.borderColor,

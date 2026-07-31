@@ -274,7 +274,7 @@ function makeStyles(theme: ThemeTokens, insets: { top: number; bottom: number })
     },
     circleShadow: {
       marginBottom: 28,
-      borderRadius: 100,
+      borderRadius: 5,
       shadowColor: theme.secondary,
       shadowOffset: { width: 0, height: 12 },
       shadowOpacity: 0.25,
@@ -284,7 +284,7 @@ function makeStyles(theme: ThemeTokens, insets: { top: number; bottom: number })
     circle: {
       width: 200,
       height: 200,
-      borderRadius: 100,
+      borderRadius: 5,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -311,7 +311,7 @@ function makeStyles(theme: ThemeTokens, insets: { top: number; bottom: number })
     },
     dot: {
       height: 8,
-      borderRadius: 4,
+      borderRadius: 5,
     },
     dotActive: {
       width: 32,
@@ -329,7 +329,7 @@ function makeStyles(theme: ThemeTokens, insets: { top: number; bottom: number })
     nextButton: {
       minHeight: 52,
       backgroundColor: theme.secondary,
-      borderRadius: 26,
+      borderRadius: 5,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",

@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: THEME.colors.cardColor,
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 16,
     borderWidth: 1,
     borderColor: THEME.colors.borderColor,
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 5,
     backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center",
     alignItems: "center",

@@ -131,7 +131,7 @@ export function CardBook({ book, onOpen, onDelete, onSyncPress }: CardBookProps)
 const styles = StyleSheet.create({
   card: {
     backgroundColor: THEME.colors.cardColor,
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 14,
     borderWidth: 1,
     borderColor: THEME.colors.borderColor,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 48,
     height: 48,
-    borderRadius: 12,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
   progressBarBg: {
     height: 4,
     backgroundColor: THEME.colors.thirdColor,
-    borderRadius: 2,
+    borderRadius: 5,
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
     backgroundColor: THEME.colors.secondaryColor,
-    borderRadius: 2,
+    borderRadius: 5,
   },
   actions: {
     flexDirection: "row",
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.secondaryColor,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: 5,
     flex: 1,
     justifyContent: "center",
   },

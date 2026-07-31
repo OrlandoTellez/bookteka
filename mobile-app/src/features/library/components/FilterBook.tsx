@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   filterChip: {
     paddingVertical: 6,
     paddingHorizontal: 14,
-    borderRadius: 20,
+    borderRadius: 5,
     backgroundColor: THEME.colors.fourColor,
     borderWidth: 1,
     borderColor: THEME.colors.borderColor,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 5,
     backgroundColor: THEME.colors.fourColor,
     borderWidth: 1,
     borderColor: THEME.colors.borderColor,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 12,
     paddingHorizontal: 4,
-    borderRadius: 8,
+    borderRadius: 5,
   },
   sortItemActive: { backgroundColor: THEME.colors.thirdColor },
   sortItemText: {

@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   headerButton: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   bookmarkHeaderButton: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     backgroundColor: THEME.colors.secondaryColor,
-    borderRadius: 8,
+    borderRadius: 5,
     minWidth: 16,
     height: 16,
     justifyContent: "center",
