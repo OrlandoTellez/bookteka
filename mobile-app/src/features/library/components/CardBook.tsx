@@ -1,33 +1,16 @@
 import { useState } from "react"
 import { View, Text, Pressable, StyleSheet } from "react-native"
 import {
+  Book as BookIcon,
   Clock,
   Trash2,
   Cloud,
   CloudOff,
-  BookOpen,
 } from "lucide-react-native"
 import { THEME } from "@/shared/lib/theme"
 import type { Book } from "@/shared/types/book"
 import { formatTime } from "@/utils/time"
 import { Modal } from "@/components/common"
-
-// deterministic book color from name
-function getBookColor(name: string): string {
-  const colors = [
-    "#df8052", "#0284c7", "#059669", "#8b6914",
-    "#7c3aed", "#db2777", "#0891b2", "#d97706",
-  ]
-  let hash = 0
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  return colors[Math.abs(hash) % colors.length]
-}
-
-function getBookInitial(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || "?"
-}
 
 interface CardBookProps {
   book: Book
@@ -38,7 +21,7 @@ interface CardBookProps {
 
 export function CardBook({ book, onOpen, onDelete, onSyncPress }: CardBookProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const bookColor = getBookColor(book.name)
+
   const progress =
     book.totalPages && book.totalPages > 0
       ? Math.min(
@@ -50,6 +33,11 @@ export function CardBook({ book, onOpen, onDelete, onSyncPress }: CardBookProps)
       : 0
 
   const displayName = book.name.replace(".pdf", "")
+  const lastRead = new Date(book.lastReadAt).toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
 
   return (
     <>
@@ -57,45 +45,63 @@ export function CardBook({ book, onOpen, onDelete, onSyncPress }: CardBookProps)
         onPress={() => onOpen(book)}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
-        <View style={[styles.iconWrapper, { backgroundColor: bookColor + "20" }]}>
-          <Text style={[styles.iconText, { color: bookColor }]}>
-            {getBookInitial(displayName)}
-          </Text>
+        {/* Header: icon + content */}
+        <View style={styles.header}>
+          <View style={styles.iconWrapper}>
+            <BookIcon size={22} color={THEME.colors.secondaryColor} />
+          </View>
+
+          <View style={styles.content}>
+            <Text style={styles.title} numberOfLines={2}>
+              {displayName}
+            </Text>
+
+            <View style={styles.meta}>
+              <View style={styles.metaItem}>
+                <Clock size={13} color={THEME.colors.fontColorText} />
+                <Text style={styles.metaText}>
+                  {formatTime(book.readingTimeSeconds ?? 0)}
+                </Text>
+              </View>
+              <Text style={styles.metaDot}>•</Text>
+              <Text style={styles.metaText}>
+                {book.scrollPosition > 0 ? "En progreso" : "Sin empezar"}
+              </Text>
+            </View>
+
+            <Text style={styles.lastRead}>Última lectura: {lastRead}</Text>
+          </View>
         </View>
 
-        <Text style={styles.title} numberOfLines={2}>
-          {displayName}
-        </Text>
-
-        <View style={styles.metaRow}>
-          <Clock size={12} color={THEME.colors.fontColorText} />
-          <Text style={styles.metaText}>
-            {formatTime(book.readingTimeSeconds ?? 0)}
-          </Text>
-        </View>
-
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
-        </View>
-
+        {/* Actions */}
         <View style={styles.actions}>
-          <Pressable onPress={() => onOpen(book)} style={styles.readButton}>
-            <BookOpen size={12} color="#fff" />
+          <Pressable
+            onPress={() => onOpen(book)}
+            style={({ pressed }) => [styles.readButton, pressed && styles.buttonPressed]}
+          >
             <Text style={styles.readButtonText}>
-              {book.scrollPosition > 0 ? "Continuar" : "Empezar"}
+              {book.scrollPosition > 0 ? "Continuar leyendo" : "Empezar a leer"}
             </Text>
           </Pressable>
 
-          <Pressable onPress={() => onSyncPress?.(book)} style={styles.syncIndicator} hitSlop={8}>
+          <Pressable
+            onPress={() => onSyncPress?.(book)}
+            style={styles.iconButton}
+            hitSlop={8}
+          >
             {book.isSynced ? (
-              <Cloud size={14} color={THEME.colors.secondaryColor} />
+              <Cloud size={18} color={THEME.colors.secondaryColor} />
             ) : (
-              <CloudOff size={14} color={THEME.colors.fontColorText} />
+              <CloudOff size={18} color={THEME.colors.fontColorText} />
             )}
           </Pressable>
 
-          <Pressable onPress={() => setShowDeleteModal(true)} style={styles.deleteButton} hitSlop={8}>
-            <Trash2 size={14} color={THEME.colors.fontColorText} />
+          <Pressable
+            onPress={() => setShowDeleteModal(true)}
+            style={({ pressed }) => [styles.iconButton, pressed && styles.deleteButtonHover]}
+            hitSlop={8}
+          >
+            <Trash2 size={18} color={THEME.colors.fontColorText} />
           </Pressable>
         </View>
       </Pressable>
@@ -132,10 +138,10 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: THEME.colors.cardColor,
     borderRadius: 5,
-    padding: 14,
+    padding: 20,
     borderWidth: 1,
     borderColor: THEME.colors.borderColor,
-    gap: 10,
+    gap: 16,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -143,60 +149,87 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   pressed: { opacity: 0.85 },
+  header: {
+    flexDirection: "row",
+    gap: 16,
+  },
   iconWrapper: {
-    width: 48,
-    height: 48,
+    width: 50,
+    height: 50,
     borderRadius: 5,
+    backgroundColor: THEME.colors.thirdColor,
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center",
   },
-  iconText: { fontSize: 22, fontWeight: "700" },
+  content: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
     color: THEME.colors.fontColorTitle,
-    textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 21,
   },
-  metaRow: {
+  meta: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
+    marginTop: 6,
+  },
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
-  metaText: { fontSize: 12, color: THEME.colors.fontColorText },
-  progressBarBg: {
-    height: 4,
-    backgroundColor: THEME.colors.thirdColor,
-    borderRadius: 5,
-    overflow: "hidden",
+  metaText: {
+    fontSize: 13,
+    color: THEME.colors.fontColorText,
   },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: THEME.colors.secondaryColor,
-    borderRadius: 5,
+  metaDot: {
+    fontSize: 13,
+    color: THEME.colors.fontColorText,
+  },
+  lastRead: {
+    fontSize: 12,
+    color: THEME.colors.fontColorText,
+    marginTop: 2,
   },
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 6,
-    marginTop: 2,
+    gap: 8,
   },
   readButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: THEME.colors.secondaryColor,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 5,
     flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+    backgroundColor: THEME.colors.secondaryColor,
+    alignItems: "center",
     justifyContent: "center",
   },
-  readButtonText: { fontSize: 12, fontWeight: "600", color: "#fff" },
-  syncIndicator: { padding: 4 },
-  deleteButton: { padding: 4 },
-  deleteText: { color: THEME.colors.fontColorText, fontSize: 15, lineHeight: 22 },
+  readButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  buttonPressed: {
+    opacity: 0.8,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButtonHover: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+  },
+  deleteText: {
+    color: THEME.colors.fontColorText,
+    fontSize: 15,
+    lineHeight: 22,
+  },
 })
