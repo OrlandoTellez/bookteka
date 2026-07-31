@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from "react-native"
 import { useRouter, Link } from "expo-router"
+import { Book, Eye, EyeOff } from "lucide-react-native"
 import { signUp } from "@/shared/lib/auth"
 import { useAppTheme } from "@/hooks/useAppTheme"
 import type { ThemeTokens } from "@/shared/theme"
@@ -22,6 +23,9 @@ export default function RegisterScreen() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -33,6 +37,11 @@ export default function RegisterScreen() {
 
     if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden")
       return
     }
 
@@ -64,6 +73,7 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
+          <Book size={48} color="#ffffff" style={styles.logo} />
           <Text style={styles.title}>Bookteka</Text>
           <Text style={styles.subtitle}>Crea tu cuenta gratuita</Text>
         </View>
@@ -106,15 +116,54 @@ export default function RegisterScreen() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Mínimo 6 caracteres"
-              placeholderTextColor={theme.fontColorText}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              editable={!isLoading}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Mínimo 6 caracteres"
+                placeholderTextColor={theme.fontColorText}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+                activeOpacity={0.6}
+              >
+                {showPassword ? (
+                  <EyeOff size={20} color={theme.fontColorText} />
+                ) : (
+                  <Eye size={20} color={theme.fontColorText} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Repetir Contraseña</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Repite tu contraseña"
+                placeholderTextColor={theme.fontColorText}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                activeOpacity={0.6}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff size={20} color={theme.fontColorText} />
+                ) : (
+                  <Eye size={20} color={theme.fontColorText} />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -160,10 +209,13 @@ function makeStyles(theme: ThemeTokens) {
       alignItems: "center",
       marginBottom: 40,
     },
+    logo: {
+      marginBottom: 12,
+    },
     title: {
       fontSize: 36,
       fontWeight: "700",
-      color: theme.secondary,
+      color: "#ffffff",
       marginBottom: 8,
     },
     subtitle: {
@@ -203,6 +255,26 @@ function makeStyles(theme: ThemeTokens) {
       color: theme.fontColorTitle,
       borderWidth: 1,
       borderColor: theme.border,
+    },
+    passwordContainer: {
+      position: "relative",
+      justifyContent: "center",
+    },
+    passwordInput: {
+      backgroundColor: theme.card,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      paddingRight: 48,
+      fontSize: 16,
+      color: theme.fontColorTitle,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    eyeButton: {
+      position: "absolute",
+      right: 14,
+      padding: 4,
     },
     button: {
       backgroundColor: theme.secondary,
