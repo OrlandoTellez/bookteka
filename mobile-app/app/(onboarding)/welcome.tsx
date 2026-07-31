@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
-  StatusBar,
 } from "react-native"
 import { useRouter } from "expo-router"
 import { LinearGradient } from "expo-linear-gradient"
@@ -137,8 +136,6 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.primary} />
-
       {/* Top bar: Back arrow + Skip */}
       <View style={styles.topBar}>
         {!isFirst && (

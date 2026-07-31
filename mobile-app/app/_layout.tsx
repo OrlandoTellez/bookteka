@@ -6,7 +6,9 @@ import { getCachedSession } from "@/shared/lib/auth"
 import { setCurrentUserId } from "@/shared/database"
 import { useBookStore } from "@/shared/store/bookStore"
 import { useUserPreferences } from "@/shared/store/userPreferencesStore"
-import { ActivityIndicator, StatusBar, View } from "react-native"
+import { ActivityIndicator, Platform, StatusBar, View } from "react-native"
+import * as NavigationBar from 'expo-navigation-bar';
+import { setStatusBarStyle } from "expo-status-bar"
 import { THEME } from "@/shared/lib/theme"
 
 type RootRoutes = "(tabs)" | "(auth)" | "(onboarding)" | "reader/[id]";
@@ -77,6 +79,13 @@ export default function RootLayout() {
     }
   }, [isReady])
 
+  // Barra de navegacion nativa con iconos oscuros
+  useEffect(() => {
+    if (Platform.OS !== 'android') return
+    NavigationBar.setBackgroundColorAsync('#000000')
+    NavigationBar.setButtonStyleAsync('light')
+  }, [])
+
   // Show a loading indicator while initializing
   if (!isReady) {
     return (
@@ -85,7 +94,7 @@ export default function RootLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#000",
+          backgroundColor: "#000000",
         }}
       >
         <ActivityIndicator size="large" color="#df8052" />
@@ -95,7 +104,11 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <StatusBar backgroundColor={THEME.colors.primaryColor} translucent={false} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={THEME.colors.primaryColor}
+        translucent={false}
+      />
       <Stack
         screenOptions={{
           headerShown: false,

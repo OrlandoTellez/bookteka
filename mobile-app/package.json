@@ -15,6 +15,7 @@
     "@types/uuid": "^11.0.0",
     "dotenv": "^17.4.2",
     "expo": "~54.0.33",
+    "expo-navigation-bar": "~5.0.10",
     "expo-constants": "~18.0.13",
     "expo-crypto": "^56.0.4",
     "expo-document-picker": "^56.0.4",
