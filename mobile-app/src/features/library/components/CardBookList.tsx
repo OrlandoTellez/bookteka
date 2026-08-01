@@ -1,16 +1,8 @@
 import { useState } from "react"
 import { View, Text, Pressable, StyleSheet } from "react-native"
-import {
-  Book as BookIcon,
-  Clock,
-  Trash2,
-  ChevronRight,
-  Cloud,
-  CloudOff,
-} from "lucide-react-native"
+import { Book as BookIcon, Cloud, CloudOff, Trash2 } from "lucide-react-native"
 import { THEME } from "@/shared/lib/theme"
 import type { Book } from "@/shared/types/book"
-import { formatTime } from "@/utils/time"
 import { Modal } from "@/components/common"
 
 interface CardBookListProps {
@@ -48,12 +40,6 @@ export function CardBookList({ book, onOpen, onDelete, onSyncPress }: CardBookLi
         </View>
 
         <View style={styles.meta}>
-          <View style={styles.metaItem}>
-            <Clock size={12} color={THEME.colors.fontColorText} />
-            <Text style={styles.metaText}>
-              {formatTime(book.readingTimeSeconds ?? 0)}
-            </Text>
-          </View>
           <View style={[
             styles.badge,
             book.scrollPosition > 0 ? styles.badgeActive : styles.badgeInactive,
@@ -83,8 +69,6 @@ export function CardBookList({ book, onOpen, onDelete, onSyncPress }: CardBookLi
             <CloudOff size={16} color={THEME.colors.fontColorText} />
           )}
         </View>
-
-        <ChevronRight size={16} color={THEME.colors.fontColorText} />
       </Pressable>
 
       <Modal
@@ -147,8 +131,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "600",
     color: THEME.colors.fontColorTitle,
   },
   meta: {
@@ -156,15 +140,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     flexShrink: 0,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  metaText: {
-    fontSize: 12,
-    color: THEME.colors.fontColorText,
   },
   metaDate: {
     fontSize: 12,

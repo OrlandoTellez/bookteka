@@ -89,5 +89,5 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   row: { gap: 12 },
-  itemWrapper: { flex: 1, maxWidth: "50%" },
+  itemWrapper: { flex: 1, maxWidth: "100%" },
 })
