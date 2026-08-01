@@ -1,4 +1,4 @@
-import { FlatList, RefreshControl, StyleSheet, View } from "react-native"
+import { FlatList, RefreshControl, StyleSheet } from "react-native"
 import { THEME } from "@/shared/lib/theme"
 import type { Book } from "@/shared/types/book"
 import { CardBook } from "./CardBook"
@@ -24,8 +24,6 @@ interface BookGridProps {
   onRefresh?: () => void
   pagination?: PaginationInfo
 }
-
-const NUM_COLUMNS = 2
 
 export function BookGrid({
   books,
@@ -53,18 +51,14 @@ export function BookGrid({
     <FlatList
       data={books}
       keyExtractor={(item) => item.id}
-      numColumns={NUM_COLUMNS}
       contentContainerStyle={styles.list}
-      columnWrapperStyle={styles.row}
       refreshControl={
         onRefresh ? (
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={THEME.colors.secondaryColor} />
         ) : undefined
       }
       renderItem={({ item }) => (
-        <View style={styles.itemWrapper}>
-          <CardBook book={item} onOpen={onOpen} onDelete={onDelete} onSyncPress={onSyncPress} />
-        </View>
+        <CardBook book={item} onOpen={onOpen} onDelete={onDelete} onSyncPress={onSyncPress} />
       )}
       ListFooterComponent={
         pagination && pagination.totalCount > 0 ? (
@@ -87,7 +81,6 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 16,
     paddingBottom: 100,
+    gap: 14
   },
-  row: { gap: 12 },
-  itemWrapper: { flex: 1, maxWidth: "100%" },
 })
