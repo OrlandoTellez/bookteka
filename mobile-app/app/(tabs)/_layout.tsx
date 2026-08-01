@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from "expo-router"
 import { Book, User } from "lucide-react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppTheme } from "@/hooks/useAppTheme"
 import { useEffect, useState } from "react"
 import { getCachedSession } from "@/shared/lib/auth"
@@ -21,6 +22,7 @@ const TABS: TabConfig[] = [
 
 export default function TabLayout() {
   const { theme } = useAppTheme()
+  const insets = useSafeAreaInsets()
   const [isChecking, setIsChecking] = useState(true)
   const [hasSession, setHasSession] = useState(false)
 
@@ -72,6 +74,19 @@ export default function TabLayout() {
           backgroundColor: theme.primary,
           borderTopColor: theme.border,
           borderTopWidth: 1,
+          height: 70 + insets.bottom,
+          paddingTop: 8,
+        },
+        tabBarItemStyle: {
+          flex: 1,
+        },
+        tabBarIconStyle: {
+          flex: 1,
+          justifyContent: "center",
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          marginTop: 2,
         },
         tabBarActiveTintColor: theme.secondary,
         tabBarInactiveTintColor: theme.fontColorText,
