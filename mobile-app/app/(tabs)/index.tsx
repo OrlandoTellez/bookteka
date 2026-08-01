@@ -1,22 +1,22 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import {
-  View, Text, TextInput, Pressable, RefreshControl,
-  ScrollView, Alert, StyleSheet,
+  View, Pressable, RefreshControl, ScrollView, Alert, StyleSheet,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
-import { Book as BookIcon, Search, Grid, Menu, Plus } from "lucide-react-native"
+import { Book as BookIcon, Plus } from "lucide-react-native"
 import { THEME } from "@/shared/lib/theme"
 import { useBookStore } from "@/shared/store/bookStore"
 import type { Book } from "@/shared/types/book"
 import { normalizeText } from "@/utils/text"
 import { BookGrid } from "@/features/library/components/BookGrid"
 import { BookList } from "@/features/library/components/BookList"
-import { FilterBook, type FilterStatus, type SortBy } from "@/features/library/components/FilterBook"
 import { PDFUploader } from "@/features/library/components/PDFUploader"
 import { EmptyState, Loading } from "@/components/common"
+import { LibraryHeader } from "@/features/library/components/LibraryHeader"
+import { LibrarySearchBar } from "@/features/library/components/LibrarySearchBar"
+import { LibraryToolbar, type FilterStatus, type SortBy, type ViewMode } from "@/features/library/components/LibraryToolbar"
 
-type ViewMode = "grid" | "list"
 const ITEMS_PER_PAGE = 6
 
 export default function LibraryScreen() {
@@ -119,52 +119,21 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Librería</Text>
-          <Text style={styles.subtitle}>
-            {books.length > 0
-              ? `${books.length} libro${books.length !== 1 ? "s" : ""} en tu biblioteca`
-              : "Tu biblioteca personal"}
-          </Text>
-        </View>
+        <LibraryHeader bookCount={books.length} />
 
         {books.length > 0 && (
-          <View style={styles.searchContainer}>
-            <View style={styles.searchBar}>
-              <Search size={18} color={THEME.colors.fontColorText} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Buscar libros..."
-                placeholderTextColor={THEME.colors.fontColorText}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-          </View>
+          <LibrarySearchBar value={searchQuery} onChangeText={setSearchQuery} />
         )}
 
         {books.length > 0 && (
-          <View style={styles.toolbar}>
-            <View style={styles.filterSortRow}>
-              <FilterBook filterStatus={filterStatus} onFilterChange={setFilterStatus} sortBy={sortBy} onSortChange={setSortBy} />
-            </View>
-            <View style={styles.viewToggle}>
-              <Pressable
-                onPress={() => setViewMode("grid")}
-                style={[styles.viewButton, styles.viewButtonFirst, viewMode === "grid" && styles.viewButtonActive]}
-              >
-                <Grid size={16} color={viewMode === "grid" ? THEME.colors.secondaryColor : THEME.colors.fontColorText} />
-              </Pressable>
-              <Pressable
-                onPress={() => setViewMode("list")}
-                style={[styles.viewButton, styles.viewButtonLast, viewMode === "list" && styles.viewButtonActive]}
-              >
-                <Menu size={16} color={viewMode === "list" ? THEME.colors.secondaryColor : THEME.colors.fontColorText} />
-              </Pressable>
-            </View>
-          </View>
+          <LibraryToolbar
+            filterStatus={filterStatus}
+            onFilterChange={setFilterStatus}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
         )}
 
         {books.length > 0 ? (
@@ -203,48 +172,39 @@ export default function LibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: THEME.colors.primaryColor },
-  container: { flex: 1, backgroundColor: THEME.colors.primaryColor },
-  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
-  title: { fontSize: 32, fontWeight: "700", color: THEME.colors.fontColorTitle },
-  subtitle: { fontSize: 15, color: THEME.colors.fontColorText, marginTop: 4 },
-  searchContainer: { paddingHorizontal: 16, paddingBottom: 10 },
-  searchBar: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: THEME.colors.fourColor, borderRadius: 5,
-    paddingHorizontal: 14, gap: 10,
-    borderWidth: 1, borderColor: THEME.colors.borderColor,
+  safeArea: {
+    flex: 1,
+    backgroundColor: THEME.colors.primaryColor
   },
-  searchInput: {
-    flex: 1, paddingVertical: 12, fontSize: 16, color: THEME.colors.fontColorTitle,
+  container: {
+    flex: 1,
+    backgroundColor: THEME.colors.primaryColor
   },
-  toolbar: {
-    flexDirection: "row", alignItems: "center",
-    justifyContent: "space-between", paddingHorizontal: 16,
-    paddingBottom: 12, gap: 8,
+  emptyScroll: {
+    flexGrow: 1,
+    justifyContent: "center"
   },
-  filterSortRow: { flex: 1, flexShrink: 1 },
-  viewToggle: {
-    flexDirection: "row",
-    borderWidth: 1, borderColor: THEME.colors.borderColor,
-    borderRadius: 5, overflow: "hidden",
-  },
-  viewButton: {
-    paddingVertical: 8, paddingHorizontal: 10,
-    backgroundColor: THEME.colors.fourColor,
-  },
-  viewButtonFirst: { borderRightWidth: 0.5, borderRightColor: THEME.colors.borderColor },
-  viewButtonLast: { borderLeftWidth: 0.5, borderLeftColor: THEME.colors.borderColor },
-  viewButtonActive: { backgroundColor: THEME.colors.thirdColor },
-  emptyScroll: { flexGrow: 1, justifyContent: "center" },
   fab: {
-    position: "absolute", right: 20, bottom: 20,
-    width: 56, height: 56, borderRadius: 5,
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 5,
     backgroundColor: THEME.colors.secondaryColor,
-    justifyContent: "center", alignItems: "center",
-    elevation: 6, shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3, shadowRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
-  fabPressed: { opacity: 0.85, transform: [{ scale: 0.95 }] },
+  fabPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.95 }]
+  },
 })
