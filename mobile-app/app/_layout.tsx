@@ -8,7 +8,6 @@ import { useBookStore } from "@/shared/store/bookStore"
 import { useUserPreferences } from "@/shared/store/userPreferencesStore"
 import { ActivityIndicator, Platform, StatusBar, View } from "react-native"
 import * as NavigationBar from 'expo-navigation-bar';
-import { setStatusBarStyle } from "expo-status-bar"
 import { THEME } from "@/shared/lib/theme"
 
 type RootRoutes = "(tabs)" | "(auth)" | "(onboarding)" | "reader/[id]";
