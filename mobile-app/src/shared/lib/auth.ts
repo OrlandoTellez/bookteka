@@ -105,7 +105,7 @@ export async function signOut(): Promise<void> {
 
 export async function getSession(): Promise<SessionData | null> {
   try {
-    const response = await fetch(`${AUTH_URL}/api/auth/session`, {
+    const response = await fetch(`${AUTH_URL}/api/auth/get-session`, {
       credentials: "include",
     })
 
