@@ -74,6 +74,7 @@ export const auth = betterAuth({
   },
   advanced: {
     useSecureCookies: isProductionEnv,
+    disableCSRFCheck: true,
   },
   cookie: {
     name: "better-auth.session_token",
