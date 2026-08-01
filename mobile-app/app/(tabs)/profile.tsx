@@ -1,37 +1,28 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
-import {
-  View, Text, ScrollView, Pressable,
-  ActivityIndicator, Alert, StyleSheet,
-} from "react-native"
-import {
-  User, Clock, BookOpen, TrendingUp,
-  Cloud, CloudOff, CloudUpload, CloudDownload,
-  Edit2, LogOut,
-} from "lucide-react-native"
+import { ScrollView, Alert, StyleSheet } from "react-native"
+import { Clock, BookOpen, TrendingUp } from "lucide-react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
 import { THEME } from "@/shared/lib/theme"
+import { router } from "expo-router"
 import { CloudSyncToggle } from "@/components/common/CloudSyncToggle"
 import { useBookStore } from "@/shared/store/bookStore"
-import { useStreakStore } from "@/shared/store/streakStore"
-import { getSession, signOut } from "@/shared/lib/auth"
+import { getSession, signOut, type SessionData } from "@/shared/lib/auth"
 import { clearDatabase } from "@/shared/database"
 import { downloadBookUrl } from "@/shared/api/book"
 import { formatTime } from "@/utils/time"
-import { StatCard } from "@/features/profile/components/StatCard"
 import { StreakCard } from "@/features/profile/components/StreakCard"
 import { ReadingSettingsCard } from "@/features/profile/components/ReadingSettingsCard"
-import type { SessionData } from "@/shared/lib/auth"
+import { ProfileHeader } from "@/features/profile/components/ProfileHeader"
+import { UserCard } from "@/features/profile/components/UserCard"
+import { StatsGrid, type StatItem } from "@/features/profile/components/StatsGrid"
+import { BookProgressList } from "@/features/profile/components/BookProgressList"
+import { SignOutButton } from "@/features/profile/components/SignOutButton"
 import type { Book } from "@/shared/types/book"
-import { router } from "expo-router"
-import { SafeAreaView } from "react-native-safe-area-context"
 
 export default function ProfileScreen() {
   const [session, setSession] = useState<SessionData | null>(null)
   const [isSessionLoading, setIsSessionLoading] = useState(true)
-  const {
-    books, loadBooks, setReadingTime,
-    uploadBookToCloud, downloadBookFromCloud,
-  } = useBookStore()
-  const { streakData } = useStreakStore()
+  const { books, loadBooks, uploadBookToCloud } = useBookStore()
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   useEffect(() => {
@@ -83,9 +74,9 @@ export default function ProfileScreen() {
     ])
   }, [router])
 
-  const handleDownload = useCallback(async (bookId: string, fileName: string) => {
+  const handleDownload = useCallback(async (bookId: string) => {
     try {
-      const url = await downloadBookUrl(bookId)
+      await downloadBookUrl(bookId)
       // En mobile no podemos forzar descarga como en web, abrimos en webview o mostramos URL
       Alert.alert("Descarga", `URL del archivo generada. Puedes abrirla desde un navegador.`)
     } catch (error) {
@@ -110,9 +101,7 @@ export default function ProfileScreen() {
     )
   }, [])
 
-  const userInitial = session?.user?.name?.charAt(0).toUpperCase() || "U"
-
-  const stats = [
+  const stats: StatItem[] = [
     {
       icon: Clock,
       iconColor: THEME.colors.secondaryColor,
@@ -146,22 +135,7 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <View style={styles.avatarSmall}>
-              {isSessionLoading ? (
-                <ActivityIndicator size="small" color={THEME.colors.fontColorText} />
-              ) : (
-                <User size={20} color={THEME.colors.secondaryColor} />
-              )}
-            </View>
-            <View>
-              <Text style={styles.headerTitle}>Mi Perfil</Text>
-              <Text style={styles.headerSubtitle}>Estadísticas de lectura</Text>
-            </View>
-          </View>
-        </View>
+        <ProfileHeader isLoading={isSessionLoading} />
 
         {/* Cloud Sync Toggle */}
         <CloudSyncToggle />
@@ -169,153 +143,25 @@ export default function ProfileScreen() {
         {/* Streak Card */}
         <StreakCard />
 
-        {/* CardProfile - User Info */}
-        <View style={styles.userCard}>
-          <View style={styles.userRow}>
-            {isSessionLoading ? (
-              <View style={styles.avatarPlaceholder}>
-                <ActivityIndicator size="small" color={THEME.colors.fontColorText} />
-              </View>
-            ) : session?.user?.image ? (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitial}>{userInitial}</Text>
-              </View>
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <User size={24} color={THEME.colors.secondaryColor} />
-              </View>
-            )}
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>
-                {isSessionLoading ? "Cargando..." : session?.user?.name || "Usuario"}
-              </Text>
-              <Text style={styles.userEmail}>{session?.user?.email || ""}</Text>
-              {session?.user?.emailVerified ? (
-                <Text style={styles.verifiedBadge}>✓ Email Verificado</Text>
-              ) : session?.user?.email ? (
-                <Text style={styles.unverifiedBadge}>⚠ Email sin verificar</Text>
-              ) : null}
-            </View>
-          </View>
-          {session?.session?.createdAt && (
-            <Text style={styles.memberSince}>
-              Miembro desde: {new Date(session.session.createdAt).toLocaleDateString("es-ES")}
-            </Text>
-          )}
-        </View>
+        {/* User Info */}
+        <UserCard session={session} isLoading={isSessionLoading} />
 
         {/* Reading Settings */}
         <ReadingSettingsCard />
 
         {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          {stats.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <StatCard
-                key={index}
-                icon={Icon}
-                iconColor={stat.iconColor}
-                label={stat.label}
-                value={stat.value}
-              />
-            )
-          })}
-        </View>
+        <StatsGrid items={stats} />
 
         {/* Books List */}
-        {sortedBooks.length > 0 && (
-          <View>
-            <View style={styles.sectionHeader}>
-              <TrendingUp size={16} color={THEME.colors.fontColorTitle} />
-              <Text style={styles.sectionTitle}>Todos los libros</Text>
-            </View>
-            <View style={styles.bookList}>
-              {sortedBooks.map((book, index) => (
-                <View key={book.id} style={styles.bookRow}>
-                  <Text style={styles.bookIndex}>{index + 1}</Text>
-
-                  <View style={styles.bookInfo}>
-                    <Text style={styles.bookName} numberOfLines={1}>
-                      {book.name.replace(/\.pdf$/i, "")}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.bookTime}>
-                    {formatTime(book.readingTimeSeconds ?? 0)}
-                  </Text>
-
-                  {/* Sync badge + Cloud actions */}
-                  <View style={styles.cloudActions}>
-                    <View style={styles.syncBadge}>
-                      {book.isSynced ? (
-                        <Cloud size={14} color={THEME.colors.secondaryColor} />
-                      ) : (
-                        <CloudOff size={14} color={THEME.colors.fontColorText} />
-                      )}
-                    </View>
-
-                    <View style={styles.actionButtons}>
-                      {book.isSynced ? (
-                        <Pressable
-                          onPress={() => handleDownload(book.id, book.name)}
-                          style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-                          hitSlop={8}
-                        >
-                          <CloudDownload size={18} color={THEME.colors.secondaryColor} />
-                        </Pressable>
-                      ) : (
-                        <Pressable
-                          onPress={() => handleUploadToCloud(book.id)}
-                          style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-                          hitSlop={8}
-                        >
-                          <CloudUpload size={18} color="#f97316" />
-                        </Pressable>
-                      )}
-                    </View>
-                  </View>
-
-                  {/* Edit time button */}
-                  <Pressable
-                    onPress={() => handleEditTime(book)}
-                    style={({ pressed }) => [styles.editButton, pressed && styles.editButtonPressed]}
-                    hitSlop={8}
-                  >
-                    <Edit2 size={16} color={THEME.colors.fontColorTitle} />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {sortedBooks.length === 0 && (
-          <View style={styles.emptySection}>
-            <BookOpen size={32} color={THEME.colors.fontColorText} />
-            <Text style={styles.emptyText}>Aún no tienes libros. ¡Añade uno para empezar!</Text>
-          </View>
-        )}
+        <BookProgressList
+          books={sortedBooks}
+          onDownload={handleDownload}
+          onUploadToCloud={handleUploadToCloud}
+          onEditTime={handleEditTime}
+        />
 
         {/* Sign Out */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.signOutButton,
-            pressed && styles.signOutButtonPressed,
-            isSigningOut && styles.signOutButtonDisabled,
-          ]}
-          onPress={handleSignOut}
-          disabled={isSigningOut}
-        >
-          {isSigningOut ? (
-            <ActivityIndicator color="#ef4444" size="small" />
-          ) : (
-            <>
-              <LogOut size={18} color="#ef4444" />
-              <Text style={styles.signOutText}>Cerrar Sesión</Text>
-            </>
-          )}
-        </Pressable>
+        <SignOutButton isSigningOut={isSigningOut} onPress={handleSignOut} />
       </ScrollView>
     </SafeAreaView>
   )
@@ -324,165 +170,16 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: THEME.colors.primaryColor
+    backgroundColor: THEME.colors.primaryColor,
   },
   container: {
     flex: 1,
     backgroundColor: THEME.colors.primaryColor,
     paddingHorizontal: 24,
-    paddingTop: 16
+    paddingTop: 16,
   },
   contentContainer: {
     paddingBottom: 40,
-    gap: 16
+    gap: 16,
   },
-  // Header
-  header: {
-    paddingBottom: 4
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12
-  },
-  avatarSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 5,
-    backgroundColor: THEME.colors.thirdColor,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: THEME.colors.fontColorTitle
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: THEME.colors.fontColorText,
-    marginTop: 1
-  },
-  // CardProfile
-  userCard: {
-    backgroundColor: THEME.colors.cardColor, borderRadius: 5, padding: 16,
-    borderWidth: 1, borderColor: THEME.colors.borderColor, gap: 12,
-  },
-  userRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14
-  },
-  avatarPlaceholder: {
-    width: 48, height: 48, borderRadius: 5,
-    backgroundColor: THEME.colors.thirdColor,
-    justifyContent: "center", alignItems: "center",
-  },
-  avatarInitial: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: THEME.colors.secondaryColor
-  },
-  userInfo: {
-    flex: 1,
-    gap: 2
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: THEME.colors.fontColorTitle
-  },
-  userEmail: {
-    fontSize: 13,
-    color: THEME.colors.fontColorText
-  },
-  verifiedBadge: {
-    fontSize: 12,
-    color: "#4ade80",
-    fontWeight: "600",
-    marginTop: 2
-  },
-  unverifiedBadge: {
-    fontSize: 12,
-    color: "#fbbf24",
-    fontWeight: "600",
-    marginTop: 2
-  },
-  memberSince: {
-    fontSize: 12,
-    color: THEME.colors.fontColorText,
-    paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: THEME.colors.borderColor
-  },
-  // Stats
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12
-  },
-  // Books
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 10
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: THEME.colors.fontColorTitle
-  },
-  bookList: {
-    backgroundColor: THEME.colors.cardColor, borderRadius: 5,
-    borderWidth: 1, borderColor: THEME.colors.borderColor, overflow: "hidden",
-  },
-  bookRow: {
-    flexDirection: "row", alignItems: "center",
-    paddingVertical: 12, paddingHorizontal: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: THEME.colors.borderColor, gap: 10,
-  },
-  bookIndex: {
-    fontSize: 13, fontWeight: "600", color: THEME.colors.fontColorText, minWidth: 20,
-  },
-  bookInfo: { flex: 1 },
-  bookName: { fontSize: 14, fontWeight: "600", color: THEME.colors.fontColorTitle },
-  bookTime: {
-    fontSize: 12, color: THEME.colors.fontColorText,
-    fontVariant: ["tabular-nums"], minWidth: 55, textAlign: "right",
-  },
-  cloudActions: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-  },
-  syncBadge: {
-    width: 24, alignItems: "center",
-  },
-  actionButtons: {},
-  actionButton: {
-    width: 28, height: 28, borderRadius: 5,
-    justifyContent: "center", alignItems: "center",
-  },
-  actionButtonPressed: {
-    backgroundColor: THEME.colors.thirdColor,
-  },
-  editButton: {
-    width: 28, height: 28, borderRadius: 5,
-    justifyContent: "center", alignItems: "center",
-  },
-  editButtonPressed: {
-    backgroundColor: THEME.colors.thirdColor,
-  },
-  // Empty
-  emptySection: { paddingVertical: 40, alignItems: "center", gap: 12 },
-  emptyText: { fontSize: 14, color: THEME.colors.fontColorText, textAlign: "center" },
-  // Sign Out
-  signOutButton: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: THEME.colors.cardColor, borderRadius: 5, padding: 16,
-    borderWidth: 1, borderColor: "#ef4444", minHeight: 52,
-  },
-  signOutButtonPressed: { opacity: 0.85 },
-  signOutButtonDisabled: { opacity: 0.5 },
-  signOutText: { color: "#ef4444", fontSize: 16, fontWeight: "600" },
 })
