@@ -49,7 +49,7 @@ export async function addBook(book: Book): Promise<void> {
 
   const db = await getDatabase()
   await db.runAsync(
-    `INSERT INTO books (id, userId, name, readingTimeSeconds, scrollPosition, lastReadAt, text, createdAt, totalPages, fileUri, fileUrl, fileKey, isSynced)
+    `INSERT OR REPLACE INTO books (id, userId, name, readingTimeSeconds, scrollPosition, lastReadAt, text, createdAt, totalPages, fileUri, fileUrl, fileKey, isSynced)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       book.id,

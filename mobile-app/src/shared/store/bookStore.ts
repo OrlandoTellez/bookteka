@@ -104,6 +104,12 @@ export const useBookStore = create<BookStore>((set, get) => ({
   loadBooks: async () => {
     set({ isLoading: true, error: null })
     try {
+      try {
+        await syncBooksFromCloud()
+      } catch (syncError) {
+        // Si falla la sincronización, continuamos con datos locales
+        console.warn("No se pudo sincronizar con la nube, usando datos locales:", syncError)
+      }
       const loadedBooks = await getAllBooks()
       set({ books: loadedBooks, isLoading: false })
     } catch (error) {
