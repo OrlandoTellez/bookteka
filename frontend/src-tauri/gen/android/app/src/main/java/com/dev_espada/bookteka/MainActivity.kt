@@ -1,4 +1,4 @@
-package com.dev_espada.mobile_tauri
+package com.dev_espada.bookteka
 
 import android.os.Bundle
 

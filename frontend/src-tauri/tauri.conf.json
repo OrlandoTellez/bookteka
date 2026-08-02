@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "mobile-tauri",
-  "version": "0.1.0",
-  "identifier": "com.dev-espada.mobile-tauri",
+  "productName": "bookteka",
+  "version": "1.1.0",
+  "identifier": "com.dev-espada.bookteka",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "mobile-tauri",
+        "title": "bookteka",
         "width": 800,
         "height": 600
       }
