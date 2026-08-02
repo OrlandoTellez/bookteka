@@ -1,6 +1,6 @@
 # Express Primeros Pasos — Manual Completo del Backend Bookteka
 
-> **Stack:** Node.js + TypeScript + Express v5 + Prisma + PostgreSQL + Cloudflare R2 + Better-Auth  
+> **Stack:** Node.js + TypeScript + Express v5 + Prisma + PostgreSQL + Cloudflare R2 + JWT/bcrypt  
 > **Patrón:** MVC con capa de servicios y repositorios  
 > **Autor:** Bookteka Team
 
@@ -26,7 +26,7 @@
     - 11.2 [format.ts — Normalización de archivos](#112-formatts--normalización-de-archivos)
     - 11.3 [time.ts — Formateo de fechas](#113-timets--formateo-de-fechas)
 12. [Paso 9 — Librerías y Servicios Externos](#12-paso-9-librerías-y-servicios-externos)
-    - 12.1 [auth.ts — Better-Auth](#121-authts--better-auth)
+    - 12.1 [auth.ts — JWT/bcrypt y sesiones](#121-authts--jwtbcrypt-y-sesiones)
     - 12.2 [email.ts — Resend](#122-emailts--resend)
     - 12.3 [r2.ts — Cloudflare R2 (S3-Compatible)](#123-r2ts--cloudflare-r2-s3-compatible)
 13. [Paso 10 — Capa de Repositorios](#13-paso-10-capa-de-repositorios)
@@ -79,7 +79,7 @@ src/
 | Prisma | ^6.19.2 | ORM para PostgreSQL |
 | PostgreSQL | 15+ | Base de datos relacional |
 | Cloudflare R2 | — | Storage de archivos (S3-compatible) |
-| Better-Auth | ^1.5.0 | Autenticación completa |
+| jsonwebtoken + bcrypt | JWT access/refresh y hash de contraseñas |
 | Resend | ^6.9.4 | Envío de emails |
 | Multer | ^2.1.0 | Upload de archivos |
 | Jest | ^30.3.0 | Testing |
@@ -89,7 +89,7 @@ src/
 - Separación de responsabilidades (Controller → Service → Repository)
 - Repositorios con interfaces (contratos)
 - DTOs para Tipado de entrada/salida
-- Autenticación delegada a Better-Auth
+- Autenticación propia compatible con el flujo JWT/bcrypt de backend-fastify
 - Storage externo (R2) para archivos PDF
 - Auditoría de eliminaciones
 
@@ -112,7 +112,7 @@ backend/
 ├── prisma/
 │   └── schema.prisma       # Schema de la base de datos
 │
-├── better-auth_migrations/ # Migraciones de Better-Auth
+├── prisma/migrations/   # Migraciones Prisma
 │
 ├── mock/
 │   └── book.pdf            # PDF de prueba para uploads
@@ -130,11 +130,10 @@ backend/
     │
     ├── config/
     │   ├── env.ts           # Variables de entorno validadas
-    │   ├── db.ts            # Pool de PostgreSQL nativo (para Better-Auth)
-    │   └── prisma.ts        # Cliente Prisma singleton
+        │   └── prisma.ts        # Cliente Prisma singleton
     │
     ├── lib/
-    │   ├── auth.ts          # Configuración de Better-Auth
+    │   ├── auth.ts          # JWT/bcrypt y sesiones Prisma
     │   ├── email.ts         # Servicio de emails (Resend)
     │   └── r2.ts            # Cliente S3 para Cloudflare R2
     │
@@ -219,7 +218,6 @@ Antes de empezar necesitás tener instalado:
     "@aws-sdk/client-s3": "^3.1000.0",
     "@aws-sdk/s3-request-presigner": "^3.1000.0",
     "@prisma/client": "^6.19.2",
-    "better-auth": "1.5.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -264,8 +262,8 @@ Antes de empezar necesitás tener instalado:
 - **multer** — Middleware para manejo de multipart/form-data (uploads de PDFs)
 - **@aws-sdk/client-s3** — Cliente S3 oficial de AWS para interactuar con Cloudflare R2
 - **@aws-sdk/s3-request-presigner** — Generar URLs firmadas para descargas seguras
-- **better-auth** — Autenticación completa con email+password, verificación, reset
-- **pg** — Driver nativo de PostgreSQL (Better-Auth lo necesita para el pool)
+- **bcrypt** — Hash y verificación de contraseñas
+- **jsonwebtoken** — Tokens JWT de acceso y renovación
 - **resend** — Servicio de envío de emails transaccionales
 - **dotenv** — Cargar variables de entorno desde `.env`
 - **tsx** — Ejecutar TypeScript directamente sin compilar (para desarrollo)
@@ -344,8 +342,8 @@ Creá el archivo `.env` en la raíz de `backend/`:
 PORT=3000
 DATABASE_URL=postgres://usuario:password@localhost:5432/bookteka_db?schema=public
 FRONTEND_URL=http://localhost:5173
-BETTER_AUTH_SECRET=WsEGMicmTmVF0Tln8NEkfwZkrEmIePQB
-BETTER_AUTH_URL=http://localhost:3000
+JWT_SECRET=WsEGMicmTmVF0Tln8NEkfwZkrEmIePQB
+JWT_REFRESH_SECRET=http://localhost:3000
 
 R2_ACCESS_KEY_ID=tu-access-key
 R2_SECRET_ACCESS_KEY=tu-secret-key
@@ -364,8 +362,8 @@ RESEND_FROM_EMAIL=onboarding@resend.dev
 | `PORT` | Sí | Puerto del servidor Express (default 3000) |
 | `DATABASE_URL` | Sí | Connection string de PostgreSQL |
 | `FRONTEND_URL` | Sí | URL del frontend (para CORS) |
-| `BETTER_AUTH_SECRET` | Sí | Secreto para firmar tokens de Better-Auth |
-| `BETTER_AUTH_URL` | Sí | URL base del backend (para callbacks de auth) |
+| `JWT_SECRET` | Sí | Secreto para firmar access tokens |
+| `JWT_REFRESH_SECRET` | Sí | Secreto independiente para firmar refresh tokens |
 | `R2_ACCESS_KEY_ID` | Sí | Access Key de Cloudflare R2 |
 | `R2_SECRET_ACCESS_KEY` | Sí | Secret Key de Cloudflare R2 |
 | `R2_ENDPOINT` | Sí | Endpoint S3 de Cloudflare R2 |
@@ -391,8 +389,8 @@ interface EnvConfig {
   PORT: number;
   DATABASE_URL: string;
   FRONTEND_URL: string;
-  BETTER_AUTH_SECRET: string;
-  BETTER_AUTH_URL: string;
+  JWT_SECRET: string;
+  JWT_REFRESH_SECRET: string;
   R2_ACCESS_KEY: string;
   R2_SECRET_KEY: string;
   R2_S3_API: string;
@@ -414,8 +412,8 @@ export const env: EnvConfig = {
   PORT: parseInt(process.env.PORT || "3000", 10),
   DATABASE_URL: getEnvVar("DATABASE_URL"),
   FRONTEND_URL: getEnvVar("FRONTEND_URL"),
-  BETTER_AUTH_SECRET: getEnvVar("BETTER_AUTH_SECRET"),
-  BETTER_AUTH_URL: getEnvVar("BETTER_AUTH_URL"),
+  JWT_SECRET: getEnvVar("JWT_SECRET"),
+  JWT_REFRESH_SECRET: getEnvVar("JWT_REFRESH_SECRET"),
   R2_ACCESS_KEY: getEnvVar("R2_ACCESS_KEY_ID"),
   R2_SECRET_KEY: getEnvVar("R2_SECRET_ACCESS_KEY"),
   R2_S3_API: getEnvVar("R2_ENDPOINT"),
@@ -451,7 +449,7 @@ export const pool = new Pool({
 
 **¿Qué hace?**
 
-Crea un **Pool de conexiones PostgreSQL** usando el driver `pg`. Este pool se usa exclusivamente para **Better-Auth**, que necesita acceso directo a PostgreSQL (no a través de Prisma).
+La autenticación usa el cliente Prisma singleton para acceder a usuarios, cuentas, sesiones y códigos de verificación. No se necesita un pool separado para autenticación.
 
 - **Pool** mantiene un conjunto de conexiones reutilizables (más eficiente que crear una conexión por request)
 - Se conecta usando la misma `DATABASE_URL` que Prisma
@@ -476,7 +474,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = dbPrisma;
 2. **`dbPrisma`** — Es el cliente Prisma que se usa en toda la aplicación (repositories).
 3. En producción, esto no es necesario porque no hay hot-reload.
 
-**¿Por qué no se llama `prisma`?** Porque Better-Auth también exporta un `prisma` y podrían haber conflictos de nombres. Se usa `dbPrisma` para diferenciar.
+**¿Por qué no se llama `prisma`?** Se usa `dbPrisma` para distinguir el singleton de infraestructura del resto de dependencias.
 
 ---
 
@@ -932,84 +930,17 @@ export const getUTCDateOnly = (date: Date): string => {
 
 ## 12. Paso 9 — Librerías y Servicios Externos
 
-### 12.1 `auth.ts` — Better-Auth
+### 12.1 `auth.ts` — JWT/bcrypt y sesiones Prisma
 
-```typescript
-import { betterAuth } from "better-auth";
-import { pool } from "@/config/db.js";
-import { env } from "@/config/env.js";
-import { sendEmail } from "./email.js";
+La autenticación de Express usa `bcrypt` para almacenar contraseñas y `jsonwebtoken` para emitir un access token de corta duración y un refresh token de siete días. Cada refresh token se registra en el modelo Prisma `session`, lo que permite rotarlo y revocarlo.
 
-const isProduction = env.BETTER_AUTH_URL.startsWith("https");
+- `POST /api/auth/register` crea el usuario y su cuenta de credenciales.
+- `POST /api/auth/login` verifica la contraseña y emite ambos tokens.
+- `POST /api/auth/refresh` acepta el refresh token en body, cookie o `x-refresh-token`.
+- `POST /api/auth/logout` revoca la sesión asociada y limpia las cookies.
+- `GET /api/auth/get-session` acepta cookie `accessToken`, `Authorization: Bearer` o `x-session-token`.
 
-export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL,
-  database: pool,                             // Pool de PostgreSQL nativo
-  emailAndPassword: {
-    enabled: true,
-    sendResetPassword: async ({ user, url }) => { /* envía email */ },
-  },
-  emailVerification: {
-    sendOnSignUp: true,
-    autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => { /* envía email */ },
-  },
-  trustedOrigins: [
-    env.FRONTEND_URL,
-    "http://localhost:5173",
-    "https://bookteka.up.railway.app",
-  ],
-  advanced: {
-    useSecureCookies: isProduction,
-  },
-  cookie: {
-    name: "better-auth.session_token",
-    secure: isProduction,
-    sameSite: "lax",
-    httpOnly: true,
-    maxAge: 60 * 60 * 24 * 7,
-    path: "/",
-  },
-  session: {
-    expiresIn: 60 * 60 * 24 * 7,     // 7 días
-    updateAge: 60 * 60 * 24,         // Renueva cada 24h
-  },
-});
-```
-
-**¿Qué configura Better-Auth?**
-
-| Configuración | Descripción |
-|---------------|-------------|
-| `database: pool` | Usa el pool de PostgreSQL nativo (NO Prisma) |
-| `emailAndPassword.enabled` | Habilita login con email y contraseña |
-| `sendResetPassword` | Callback para enviar email de reset |
-| `emailVerification.sendOnSignUp` | Envía email de verificación al registrarse |
-| `autoSignInAfterVerification` | Login automático después de verificar |
-| `trustedOrigins` | Orígenes permitidos para CORS de auth |
-| `useSecureCookies` | Cookies seguras solo en HTTPS |
-| `session.expiresIn` | Duración de la sesión (7 días) |
-| `session.updateAge` | Renueva la sesión cada 24h de actividad |
-
-**¿Cómo se integra con Express?**
-
-```typescript
-import { toNodeHandler } from "better-auth/node";
-
-// Todas las rutas de auth bajo /api/auth/*
-app.all("/api/auth/*splat", toNodeHandler(auth));
-```
-
-Better-Auth genera automáticamente todas las rutas de autenticación:
-- `POST /api/auth/signup` — Registro
-- `POST /api/auth/login` — Login
-- `POST /api/auth/logout` — Logout
-- `GET /api/auth/session` — Obtener sesión actual
-- `POST /api/auth/verify-email` — Verificar email
-- `POST /api/auth/forgot-password` — Olvidé contraseña
-- `POST /api/auth/reset-password` — Resetear contraseña
-
-Better-Auth además genera sus propias tablas en la base de datos (`user`, `account`, `session`, `verification`) mediante migraciones propias (carpeta `better-auth_migrations/`).
+En navegador los tokens se entregan también como cookies `httpOnly`; Tauri guarda los tokens localmente y los envía mediante headers para evitar depender de cookies cross-site.
 
 ### 12.2 `email.ts` — Resend
 
@@ -1046,7 +977,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
 
 - Crea un cliente de **Resend** (servicio de emails transaccionales, alternativa moderna a SendGrid)
 - `sendEmail()` envía un email con HTML personalizado
-- Se usa desde Better-Auth para los emails de verificación y reset de password
+- Se usa para los emails transaccionales de verificación y recuperación de contraseña
 - Si falla, lanza error (pero mejoraría con un sistema de colas para reintentos)
 
 ### 12.3 `r2.ts` — Cloudflare R2 (S3-Compatible)
@@ -1580,7 +1511,7 @@ Hoy es 2026-06-04 (ya completó hoy):
 Los controladores **reciben requests HTTP y devuelven responses**. Su trabajo es:
 
 1. Extraer datos del request (headers, params, body, query)
-2. Verificar autenticación (vía Better-Auth)
+2. Verificar autenticación mediante `auth.api.getSession`
 3. Llamar al service correspondiente
 4. Manejar errores y devolver la respuesta HTTP adecuada
 
@@ -1896,8 +1827,7 @@ import "dotenv/config";
 import express, { type Express } from "express";
 import cors from "cors";
 import { env } from "@/config/env.js";
-import { auth } from "@/lib/auth.js";
-import { toNodeHandler } from "better-auth/node";
+import { authRoutes } from "./routes/auth.routes.js";
 import { book as bookRoutes } from "./routes/book.routes.js";
 import { streak as streakRoutes } from "./routes/streak.routes.js";
 import { bookmark as bookmarkRoutes } from "./routes/bookmark.routes.js";
@@ -1913,9 +1843,8 @@ app.use(cors({
   credentials: true,
 }));
 
-// Better-Auth: maneja TODO el sistema de autenticación
-// Genera rutas como /api/auth/signup, /api/auth/login, etc.
-app.all("/api/auth/*splat", toNodeHandler(auth));
+// JWT/bcrypt: rutas explícitas de registro, login, refresh y logout.
+app.use("/api/auth", authRoutes);
 
 // Body parsers con límite de 25MB (para uploads de PDF)
 app.use(express.json({ limit: '25mb' }));
@@ -1947,16 +1876,11 @@ export default app;
 
 ```
 1. CORS               → Permite requests del frontend
-2. Better-Auth        → Maneja autenticación (antes de parsear body)
-3. express.json       → Parsea JSON bodies (25MB)
+2. express.json       → Parsea JSON bodies (25MB)
 4. express.urlencoded → Parsea form-data (25MB)
 5. Health check       → Endpoint público
 6. Rutas de negocio   → Books, Bookmarks, Streaks
 ```
-
-**¿Por qué Better-Auth va antes de los body parsers?** Better-Auth tiene su propio manejo de requests y no necesita los body parsers de Express. Si los pusieramos antes, podrían interferir.
-
-**¿Qué es `*splat`?** Es una sintaxis de Express v5 para capturar **todas** las rutas bajo `/api/auth/`. Es como un comodín que captura `/api/auth/signup`, `/api/auth/login`, `/api/auth/session`, etc.
 
 ---
 
@@ -2046,7 +1970,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
-COPY better-auth_migrations ./better-auth_migrations
+COPY prisma/migrations ./prisma/migrations
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
@@ -2061,23 +1985,22 @@ CMD ["node", "dist/server.js"]
 
 ### docker-entrypoint.sh
 
-El entrypoint ejecuta migraciones de Prisma y de Better-Auth antes de iniciar el servidor.
+El entrypoint ejecuta las migraciones de Prisma antes de iniciar el servidor.
 
 ---
 
 ## 20. Resumen de Endpoints
 
-### Autenticación (Better-Auth)
+### Autenticación (JWT/bcrypt)
 
 | Método | URL | Descripción |
 |--------|-----|-------------|
-| `POST` | `/api/auth/signup` | Registrarse |
+| `POST` | `/api/auth/register` | Registrarse |
 | `POST` | `/api/auth/login` | Iniciar sesión |
 | `POST` | `/api/auth/logout` | Cerrar sesión |
-| `GET` | `/api/auth/session` | Obtener sesión actual |
+| `GET` | `/api/auth/get-session` | Obtener sesión actual |
 | `POST` | `/api/auth/verify-email` | Verificar email |
-| `POST` | `/api/auth/forgot-password` | Solicitar reset de contraseña |
-| `POST` | `/api/auth/reset-password` | Resetear contraseña |
+| `POST` | `/api/auth/resend-verification` | Regenerar código de verificación |
 
 ### Health
 
