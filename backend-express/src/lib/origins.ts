@@ -9,6 +9,10 @@ const DEV_EXTRA_ORIGINS = [
   "http://localhost:8081",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
+  // Tauri Android dev: la WebView corre en http://tauri.localhost y llama
+  // a la API por LAN (cross-origin), así que debe estar en la lista blanca.
+  "http://tauri.localhost",
+  "http://localhost:1420",
 ];
 
 function parseOrigins(raw: string): string[] {
@@ -89,7 +93,7 @@ export function isRequestOriginAllowed(
 }
 
 /**
- * Lista derivada para casos (como better-auth) que necesitan `trustedOrigins`
+ * Lista derivada para consumidores que necesitan orígenes confiables.
  * resuelto en cada request. Si el flag está activo, devuelve el Origin del
  * request siempre que su host coincida con el del proxy.
  */

@@ -8,6 +8,7 @@ export const corsOptions: cors.CorsOptions = {
   origin: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization", "x-session-token", "x-refresh-token"],
 };
 
 export const corsOriginGuard = (

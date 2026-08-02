@@ -6,8 +6,8 @@ interface EnvConfig {
   PORT: number;
   DATABASE_URL: string;
   FRONTEND_URL: string;
-  BETTER_AUTH_SECRET: string;
-  BETTER_AUTH_URL: string;
+  JWT_SECRET: string;
+  JWT_REFRESH_SECRET: string;
 
   R2_ACCESS_KEY: string
   R2_SECRET_KEY: string
@@ -23,9 +23,20 @@ function getEnvVar(key: string): string {
   const value = process.env[key];
 
   if (!value) {
-    throw new Error("env not found");
+    throw new Error(`Missing environment variable: ${key}`);
   }
 
+  return value;
+}
+
+function getJwtSecret(key: "JWT_SECRET" | "JWT_REFRESH_SECRET"): string {
+  const value = process.env[key];
+  if (!value && process.env.NODE_ENV === "test") {
+    return `${key.toLowerCase()}-test-secret-with-at-least-32-characters`;
+  }
+  if (!value || value.length < 32) {
+    throw new Error(`${key} must contain at least 32 characters`);
+  }
   return value;
 }
 
@@ -33,8 +44,8 @@ export const env: EnvConfig = {
   PORT: parseInt(process.env.PORT || "3000", 10),
   DATABASE_URL: getEnvVar("DATABASE_URL"),
   FRONTEND_URL: getEnvVar("FRONTEND_URL"),
-  BETTER_AUTH_SECRET: getEnvVar("BETTER_AUTH_SECRET"),
-  BETTER_AUTH_URL: getEnvVar("BETTER_AUTH_URL"),
+  JWT_SECRET: getJwtSecret("JWT_SECRET"),
+  JWT_REFRESH_SECRET: getJwtSecret("JWT_REFRESH_SECRET"),
   R2_ACCESS_KEY: getEnvVar("R2_ACCESS_KEY_ID"),
   R2_SECRET_KEY: getEnvVar("R2_SECRET_ACCESS_KEY"),
   R2_S3_API: getEnvVar("R2_ENDPOINT"),

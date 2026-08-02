@@ -7,6 +7,88 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum ROLE {
+  user
+  admin
+  cajero
+}
+
+model user {
+  id             String  @id @default(uuid())
+  name           String
+  email          String  @unique
+  email_verified Boolean @default(false)
+  phone          String?
+  image          String?
+  role           ROLE    @default(cajero)
+
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+  deleted_at DateTime? @db.Timestamptz
+
+  sessions  session[]
+  accounts  account[]
+  userBooks user_book[]
+
+  @@index([email])
+  @@index([role])
+  @@index([deleted_at])
+  @@map("users")
+}
+
+model session {
+  id         String   @id @default(uuid())
+  expires_at DateTime @db.Timestamptz
+  token      String   @unique
+  ip_address String?
+  user_agent String?
+  user_id    String
+
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
+
+  user user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("session")
+}
+
+model account {
+  id          String  @id @default(uuid())
+  account_id  String
+  provider_id String
+  user_id     String
+
+  access_token  String?
+  refresh_token String?
+  id_token      String?
+  scope         String?
+  password      String?
+
+  access_token_expires_at  DateTime? @db.Timestamptz
+  refresh_token_expires_at DateTime? @db.Timestamptz
+  created_at               DateTime @default(now()) @db.Timestamptz
+  updated_at               DateTime @updatedAt @db.Timestamptz
+
+  user user @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@unique([provider_id, account_id])
+  @@map("account")
+}
+
+model verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expires_at DateTime @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
+
+  @@index([identifier])
+  @@map("verification")
+}
+
 model book {
   id        String   @id @default(uuid())
   title     String
@@ -38,6 +120,7 @@ model user_book {
   createdAt DateTime @default(now())
 
   book      book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user      user       @relation(fields: [userId], references: [id], onDelete: Cascade)
   bookmarks bookmark[]
 
   @@index([userId])

@@ -20,8 +20,7 @@ import {
   isProgressPath,
 } from "@/config/rate-limit.js";
 import { setupGracefulShutdown } from "@/config/shutdown.js";
-import { auth } from "@/lib/auth.js";
-import { toNodeHandler } from "better-auth/node";
+import { authRoutes } from "./routes/auth.routes.js";
 import { logger } from "@/lib/logger.js";
 import { r2 } from "@/lib/r2.js";
 import { book as bookRoutes } from "./routes/book.routes.js";
@@ -49,7 +48,7 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 app.use("/api/auth/get-session", sessionLimiter);
-app.use("/api/auth", authLimiter);
+app.use("/api/auth", authLimiter, authRoutes);
 
 app.use("/api", (req, res, next) => {
   if (isProgressPath(req.path)) {
@@ -59,8 +58,6 @@ app.use("/api", (req, res, next) => {
 });
 
 app.use("/api", globalLimiter);
-
-app.all("/api/auth/*splat", toNodeHandler(auth));
 
 const HEALTHCHECK_TIMEOUT_MS = 2_000;
 
