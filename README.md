@@ -12,18 +12,17 @@
 ![Prisma](https://img.shields.io/badge/prisma-%232D3748.svg?style=for-the-badge&logo=prisma&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%232496ED.svg?style=for-the-badge&logo=docker&logoColor=white)
 
-**Bookteka** es una plataforma completa para gestionar y leer libros digitales con seguimiento de progreso de lectura, disponible en web y dispositivos móviles.
+**Bookteka** es una plataforma para gestionar y leer libros digitales con seguimiento de progreso de lectura, rachas diarias y marcadores. Disponible como app de escritorio (Tauri), app Android (Tauri WebView) y web.
 
 ## Estructura del Proyecto
 
-Este monorepo contiene **cinco proyectos** independientes:
+Este monorepo contiene **cuatro proyectos** independientes:
 
 ```
 bookteka-repo/
-├── backend-express/    # API REST (Express + TypeScript)
+├── backend-express/    # API REST (Express + TypeScript + Prisma + JWT)
 ├── backend-rust/       # API REST (Rust — migración en progreso)
-├── web-app/            # Aplicación web SPA (React + Vite)
-├── mobile-app/         # Aplicación móvil (React Native + Expo)
+├── frontend/           # App de escritorio + Android (Tauri 2 + React + Vite)
 ├── landing-page/       # Página de marketing (Astro)
 ├── docker-compose.yml  # Orquestación completa del stack
 └── .env.example        # Variables de entorno globales
@@ -33,9 +32,10 @@ bookteka-repo/
 |----------|------------|-----------|
 | `backend-express/` | Node.js + Express + TypeScript | API REST principal |
 | `backend-rust/` | Rust | Migración del backend a Rust (en progreso) |
-| `web-app/` | React 19 + Vite + TypeScript | Aplicación web de lectura |
-| `mobile-app/` | React Native + Expo + TypeScript | Aplicación móvil |
+| `frontend/` | React 19 + Vite + Tauri 2 | App de escritorio (Windows/Linux/macOS) y Android |
 | `landing-page/` | Astro + TypeScript | Página de marketing estática |
+
+> **Nota:** la app móvil Android se genera desde el mismo `frontend/` mediante Tauri (`src-tauri/gen/android`). No hay un proyecto Expo/React Native separado.
 
 ---
 
@@ -47,7 +47,7 @@ bookteka-repo/
   npm install -g pnpm
   ```
 - **Docker** y **Docker Compose** (para el stack completo)
-- **Rust** (solo para desarrollo del backend-rust)
+- **Rust** (solo para desarrollo del backend-rust o el build de Tauri)
 
 ---
 
@@ -62,16 +62,19 @@ cd BOOKTEKA-REPO
 
 # 2. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus credenciales
+# Editar .env con tus credenciales (JWT_SECRET, JWT_REFRESH_SECRET, R2_*, RESEND_*)
 
 # 3. Levantar PostgreSQL + Backend + Frontend
 docker compose up --build
 ```
 
 Esto levanta:
+
 - **PostgreSQL 16** en `localhost:5433`
 - **Backend Express** en `localhost:3001`
 - **Frontend Web** en `localhost:8081`
+
+> El frontend en Docker se sirve con Nginx, que proxya `/api/` al backend. El build inyecta `VITE_API_URL=/api/v1`, por lo que las peticiones del navegador llegan al backend con el prefijo correcto.
 
 ---
 
@@ -87,25 +90,22 @@ pnpm prisma:generate     # Generar cliente Prisma
 pnpm dev                 # Iniciar en modo desarrollo (puerto 3000)
 ```
 
-### Web App
+### Frontend (escritorio + Android)
 
 ```bash
-cd web-app
+cd frontend
 cp .env.example .env
 pnpm install
-pnpm dev                 # Iniciar en modo desarrollo (puerto 5173)
+pnpm dev                 # Iniciar Vite en modo desarrollo (puerto 1420)
+
+# App de escritorio (Tauri)
+pnpm tauri dev
+
+# Build Android
+pnpm tauri android dev      # o: pnpm tauri android build
 ```
 
-### Mobile App
-
-```bash
-cd mobile-app
-cp .env.example .env
-pnpm install
-pnpm start               # Iniciar Expo dev server
-pnpm android             # Abrir en Android
-pnpm ios                 # Abrir en iOS
-```
+> En desarrollo, Vite proxya `/api` al backend (`BACKEND_HOST`). En Android, `apiEnv.ts` usa `VITE_BACKEND_HOST` + `/api/v1` directamente contra el backend en tu red local.
 
 ### Landing Page
 
@@ -119,19 +119,18 @@ pnpm dev                 # Iniciar en modo desarrollo (puerto 4321)
 
 ## Configuración del Entorno
 
-### Variables globales (raíz)
+### Variables globales (raíz, para Docker)
 
 ```env
-# Base de datos
-DATABASE_URL=postgres://usuario:password@localhost:5432/bookteka_db
-
 # Backend
 PORT=3000
-FRONTEND_URL=http://localhost:5173
-BETTER_AUTH_SECRET=tu_secret
-BETTER_AUTH_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:8081
 
-# Cloudflare R2 (almacenamiento de archivos)
+# JWT (access + refresh)
+JWT_SECRET=replace-with-at-least-32-random-characters
+JWT_REFRESH_SECRET=replace-with-a-different-at-least-32-random-characters
+
+# Cloudflare R2 (almacenamiento de PDFs)
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
 R2_ENDPOINT=...
@@ -143,11 +142,42 @@ RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=onboarding@resend.dev
 ```
 
-### Web App
+### Backend Express (`backend-express/.env`)
 
 ```env
-VITE_API_URL=/api          # URL del backend
+PORT=3000
+DATABASE_URL=postgres://usuario:password@localhost:5432/bookteka_db?schema=public
+FRONTEND_URL=http://localhost:1420
+
+JWT_SECRET=replace-with-at-least-32-random-characters
+JWT_REFRESH_SECRET=replace-with-a-different-at-least-32-random-characters
+
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_ENDPOINT=...
+R2_PUBLIC_DOMAIN=...
+R2_BUCKET=...
+
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=onboarding@resend.dev
 ```
+
+### Frontend (`frontend/.env`)
+
+```env
+# Prefijo de la API. Todas las rutas del backend viven bajo /api/v1.
+VITE_API_URL=/api/v1
+
+# Host del backend al que Vite proxya /api en desarrollo. VA SOLO EL HOST,
+# sin ruta: apiEnv.ts y vite.config.ts añaden el prefijo solos.
+BACKEND_HOST=http://localhost:3000
+
+# Host LAN del backend para Android (la WebView no usa el proxy de Vite).
+# También sin ruta: se le concatena /api/v1 automáticamente.
+VITE_BACKEND_HOST=http://192.168.0.10:3000
+```
+
+> ⚠️ **Importante:** los hosts (`BACKEND_HOST`, `VITE_BACKEND_HOST`) no deben incluir `/api/v1`. Si los incluyes, se duplicará el prefijo (`/api/v1/api/...`).
 
 ---
 
@@ -160,28 +190,21 @@ VITE_API_URL=/api          # URL del backend
 | `pnpm dev` | Iniciar servidor en modo desarrollo (tsx watch) |
 | `pnpm build` | Compilar TypeScript + generar Prisma |
 | `pnpm start` | Iniciar servidor en producción |
-| `pnpm test` | Ejecutar tests (Jest) |
+| `pnpm prisma:generate` | Generar el cliente Prisma |
+| `pnpm test` | Ejecutar tests (Jest + Supertest) |
 | `pnpm test:watch` | Tests en modo watch |
 
-### Web App (`web-app/`)
+### Frontend (`frontend/`)
 
 | Comando | Descripción |
 |---------|-------------|
-| `pnpm dev` | Iniciar servidor de desarrollo (Vite) |
-| `pnpm build` | Compilar para producción |
-| `pnpm lint` | Verificar código con ESLint |
+| `pnpm dev` | Servidor de desarrollo de Vite (puerto 1420) |
+| `pnpm build` | Compilar TypeScript + Vite build |
 | `pnpm preview` | Vista previa de producción |
-| `pnpm test` | Ejecutar tests (Vitest) |
-| `pnpm test:watch` | Tests en modo watch |
-
-### Mobile App (`mobile-app/`)
-
-| Comando | Descripción |
-|---------|-------------|
-| `pnpm start` | Iniciar Expo dev server |
-| `pnpm android` | Abrir en Android |
-| `pnpm ios` | Abrir en iOS |
-| `pnpm web` | Abrir en navegador |
+| `pnpm tauri dev` | App de escritorio en desarrollo |
+| `pnpm tauri build` | Build de la app de escritorio |
+| `pnpm tauri android dev` / `build` | App Android en desarrollo / release |
+| `pnpm exec vitest run` | Ejecutar tests unitarios (Vitest) |
 
 ### Landing Page (`landing-page/`)
 
@@ -195,42 +218,56 @@ VITE_API_URL=/api          # URL del backend
 
 ## API Endpoints
 
-### Autenticación (Better Auth)
+> Todas las rutas están montadas bajo **`/api/v1`**. Ejemplo: `GET /api/v1/books`.
 
-Toda la autenticación se maneja a través de **Better Auth** en `/api/auth/*`. El backend usa cookies para gestión de sesiones.
+### Autenticación (JWT)
 
-### Libros (`/api/books`)
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/books` | Obtener libros del usuario |
-| `POST` | `/api/books/upload` | Subir libro PDF |
-| `GET` | `/api/books/:id/download` | Descargar libro |
-| `GET` | `/api/books/:id/stream` | Stream de PDF |
-| `PATCH` | `/api/books/:id/progress` | Actualizar progreso de lectura |
-| `DELETE` | `/api/books/:id` | Eliminar libro |
-
-### Marcadores (`/api/books/:bookId/bookmarks`)
+Autenticación propia con **JWT access (15 min) + refresh (7 días)** y rotación de refresh tokens. Las contraseñas se guardan con **bcrypt**. Los tokens se envían como cookies `httpOnly` (navegador) o por headers (`Authorization: Bearer`, `x-session-token`, `x-refresh-token` — Tauri).
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `GET` | `/api/books/:bookId/bookmarks` | Obtener marcadores de un libro |
-| `POST` | `/api/books/:bookId/bookmarks` | Crear marcador |
-| `DELETE` | `/api/books/:bookId/bookmarks/:bookmarkId` | Eliminar marcador |
+| `POST` | `/api/v1/auth/register` | Registrar usuario (emite tokens) |
+| `POST` | `/api/v1/auth/login` | Iniciar sesión |
+| `POST` | `/api/v1/auth/refresh` | Renovar tokens (rota el refresh token) |
+| `POST` | `/api/v1/auth/logout` | Cerrar sesión y revocar refresh token |
+| `GET` | `/api/v1/auth/get-session` | Obtener sesión actual |
+| `POST` | `/api/v1/auth/verify-email` | Verificar correo con código |
+| `POST` | `/api/v1/auth/resend-verification` | Reenviar código de verificación |
 
-### Rachas de Lectura (`/api/streak`)
+### Libros (`/api/v1/books`)
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `GET` | `/api/streak` | Obtener racha del usuario |
-| `POST` | `/api/streak/initialize` | Inicializar racha |
-| `POST` | `/api/streak/complete` | Marcar día completado |
+| `GET` | `/api/v1/books` | Obtener libros del usuario |
+| `POST` | `/api/v1/books/upload` | Subir libro PDF (multipart, máx. 25 MB) |
+| `GET` | `/api/v1/books/:id/download` | Descargar libro (URL firmada de R2) |
+| `GET` | `/api/v1/books/:id/stream` | Stream del PDF |
+| `PATCH` | `/api/v1/books/:id/progress` | Actualizar progreso de lectura |
+| `DELETE` | `/api/v1/books/:id` | Eliminar libro |
+
+### Marcadores (`/api/v1/books/:bookId/bookmarks`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/v1/books/:bookId/bookmarks` | Obtener marcadores de un libro |
+| `POST` | `/api/v1/books/:bookId/bookmarks` | Crear marcador |
+| `DELETE` | `/api/v1/books/:bookId/bookmarks/:bookmarkId` | Eliminar marcador |
+
+### Rachas de Lectura (`/api/v1/streak`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/api/v1/streak` | Obtener racha del usuario |
+| `POST` | `/api/v1/streak/initialize` | Inicializar racha |
+| `POST` | `/api/v1/streak/complete` | Marcar día completado |
 
 ### Health Check
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| `GET` | `/api/health` | Estado de la API (DB + R2) |
+| `GET` | `/api/v1/health` | Estado de la API (DB + R2) |
+
+> Ejemplos listos para probar en `backend-express/http/` (`books.http`, `bookmarks.http`, `streaks.http`).
 
 ---
 
@@ -241,43 +278,30 @@ Toda la autenticación se maneja a través de **Better Auth** en `/api/auth/*`. 
 - **TypeScript** — Tipado estático
 - **Prisma** v6 — ORM para PostgreSQL
 - **Zod** v4 — Validación de esquemas
-- **Better Auth** v1.5 — Autenticación
-- **Cloudflare R2** — Almacenamiento de PDFs
+- **jsonwebtoken + bcrypt** — Autenticación JWT con rotación de refresh tokens
+- **Cloudflare R2** — Almacenamiento de PDFs (S3-compatible)
 - **Resend** — Envío de emails
-- **Pino** — Logging estructurado
+- **Pino + pino-http** — Logging estructurado
 - **Helmet** — Seguridad HTTP
 - **express-rate-limit** — Rate limiting
 - **Jest** + **Supertest** — Tests
 - **Multer** — Upload de archivos
 
-### Web App
+### Frontend
 - **React** v19 — Biblioteca de UI
 - **Vite** v7 — Build tool
+- **Tauri** v2 — Shell de escritorio y Android
 - **TypeScript** v5 — Tipado estático
 - **React Router** v7 — Enrutamiento
 - **Zustand** v5 — Estado global
-- **Better Auth** — Autenticación
 - **React Hook Form** + **Zod** — Formularios
 - **PDF.js** v5 — Renderizado de PDFs
-- **IndexedDB (idb)** — Almacenamiento offline
+- **IndexedDB (idb)** — Almacenamiento offline / modo local
 - **Axios** — Cliente HTTP
 - **Lucide React** — Iconos
 - **Sonner** — Notificaciones toast
 - **Vitest** + **Testing Library** — Tests
 - **ESLint** — Linting
-
-### Mobile App
-- **React Native** 0.81 — Framework móvil
-- **Expo** v54 — Plataforma RN
-- **Expo Router** v6 — Enrutamiento basado en archivos
-- **TypeScript** — Tipado estático
-- **Zustand** v5 — Estado global
-- **React Hook Form** + **Zod** — Formularios
-- **Expo SQLite** — Base de datos local
-- **Expo SecureStore** — Almacenamiento seguro
-- **Expo DocumentPicker** — Selección de archivos
-- **WebView** — Visualización de PDFs
-- **Lucide React Native** — Iconos
 
 ### Landing Page
 - **Astro** v5 — Framework SSG
@@ -288,23 +312,12 @@ Toda la autenticación se maneja a través de **Better Auth** en `/api/auth/*`. 
 
 ## Rutas de la Aplicación
 
-### Web App
-
 | Ruta | Acceso | Descripción |
 |------|--------|-------------|
 | `/auth/login` | Público | Inicio de sesión |
 | `/auth/register` | Público | Registro de usuario |
 | `/` | Protegido | Dashboard / Biblioteca |
 | `/profile` | Protegido | Perfil de usuario |
-
-### Mobile App
-
-| Ruta | Acceso | Descripción |
-|------|--------|-------------|
-| `/(auth)/login` | Público | Inicio de sesión |
-| `/(auth)/register` | Público | Registro de usuario |
-| `/(tabs)` | Protegido | Biblioteca + Perfil (tab bar) |
-| `/reader/[id]` | Protegido | Lector de libros |
 
 ### Landing Page
 - `/` — Página principal de marketing
@@ -315,29 +328,23 @@ Toda la autenticación se maneja a través de **Better Auth** en `/api/auth/*`. 
 
 ### Docker (producción)
 
-El `docker-compose.yml` incluye el stack completo. Para producción:
+El `docker-compose.yml` incluye el stack completo:
 
 ```bash
-# Usar el archivo de entorno de producción
 cp .env.example .env
 # Configurar las variables según el entorno
 docker compose up -d --build
 ```
 
-### Web App — standalone
+### Frontend — standalone
 
 ```bash
-cd web-app
-docker build -t bookteka-web .
+cd frontend
+docker build -t bookteka-web .     # inyecta VITE_API_URL=/api/v1
 docker run -p 8080:8080 bookteka-web
 ```
 
-También puede desplegarse en cualquier hosting estático (Vercel, Netlify, etc.):
-```bash
-cd web-app
-pnpm build
-# Subir contenido de dist/
-```
+La imagen sirve `dist/` con Nginx y proxya `/api/` al backend.
 
 ### Backend Express — standalone
 
@@ -350,6 +357,7 @@ docker run -p 3000:3000 bookteka-api
 ### Landing Page
 
 Sitio estático, desplegable en cualquier hosting:
+
 ```bash
 cd landing-page
 pnpm build
@@ -360,7 +368,7 @@ pnpm build
 
 ## Backend Rust (migración en progreso)
 
-Actualmente se está migrando el backend de Express a Rust. El proyecto está en fase inicial.
+Se está migrando el backend de Express a Rust. El proyecto está en fase inicial.
 
 ```bash
 cd backend-rust
@@ -375,70 +383,48 @@ cargo build
 ```
 backend-express/
 ├── src/
-│   ├── __tests__/       # Tests automatizados
-│   ├── config/          # Configuración (env, prisma, cors, rate-limit)
+│   ├── __tests__/       # Tests automatizados (Jest + Supertest)
+│   ├── config/          # Configuración (env, prisma, cors, rate-limit, shutdown)
 │   ├── controllers/     # Controladores de rutas
 │   ├── dto/             # Data Transfer Objects
 │   ├── helper/          # Utilidades
-│   ├── lib/             # Auth, R2, Logger
-│   ├── middleware/       # Auth, validación, error handler
+│   ├── lib/             # Auth (JWT), R2, Logger, Email
+│   ├── middleware/      # Auth, validación, error handler
 │   ├── repositories/    # Acceso a datos
-│   ├── routes/          # Definición de rutas
+│   ├── routes/          # Definición de rutas (auth, books, bookmarks, streak)
 │   ├── schema/          # Esquemas Zod
 │   ├── services/        # Lógica de negocio
-│   ├── types/           # Tipos TypeScript
 │   └── server.ts        # Entry point
 ├── prisma/              # Esquema y migraciones Prisma
-├── http/                # Archivos para tests HTTP
-├── doc/                 # Documentación
+├── http/                # Endpoints listos para REST Client
+├── mock/                # PDFs de prueba
+├── doc/                 # Documentación técnica
 ├── Dockerfile
 └── package.json
 ```
 
-### Web App
+### Frontend
 ```
-web-app/
+frontend/
 ├── src/
 │   ├── __tests__/       # Tests con Vitest + Testing Library
 │   ├── api/             # Cliente Axios
-│   ├── assets/          # Recursos estáticos
-│   ├── components/      # Componentes React
-│   ├── context/         # Contextos (Theme, etc.)
-│   ├── database/        # IndexedDB (idb)
+│   ├── components/      # Componentes React (pages, auth, modals, layout, common)
+│   ├── context/         # Contextos (Theme)
+│   ├── database/        # IndexedDB (idb) + sync con la API
 │   ├── hooks/           # Custom hooks
-│   ├── lib/             # Utilidades (PDF, auth)
+│   ├── lib/             # Utilidades (auth, session, PDF, env)
 │   ├── pages/           # Páginas de la app
-│   ├── routes/          # Configuración de rutas
+│   ├── routes/          # Configuración de rutas (protected/public)
 │   ├── store/           # Zustand stores
 │   ├── types/           # Tipos TypeScript
 │   ├── utils/           # Funciones auxiliares
 │   └── validations/     # Esquemas Zod
+├── src-tauri/           # Configuración Tauri (incluye gen/android para Android)
 ├── public/              # Assets públicos
 ├── Dockerfile
 ├── nginx.conf           # Configuración Nginx para producción
-├── vite.config.ts
-└── vitest.config.ts
-```
-
-### Mobile App
-```
-mobile-app/
-├── app/                 # Expo Router (rutas basadas en archivos)
-│   ├── (auth)/          # Login, Register
-│   ├── (tabs)/          # Biblioteca, Perfil
-│   ├── reader/          # Lector de libros
-│   ├── _layout.tsx      # Root layout
-│   └── +not-found.tsx
-├── src/
-│   ├── components/      # Componentes reutilizables
-│   ├── features/        # Lógica y UI por feature
-│   ├── hooks/           # Custom hooks
-│   ├── store/           # Zustand stores
-│   ├── shared/          # Componentes compartidos
-│   └── utils/           # Utilidades
-├── assets/              # Imágenes y recursos
-├── app.config.ts        # Configuración de Expo
-└── package.json
+└── vite.config.ts
 ```
 
 ### Landing Page
@@ -448,7 +434,7 @@ landing-page/
 │   ├── components/      # Componentes reutilizables
 │   ├── layouts/         # Layouts de página
 │   ├── pages/           # Páginas (Astro)
-│   └── styles/          # Estilos globales
+│   └── sections/        # Secciones de la landing
 ├── public/              # Assets estáticos
 ├── astro.config.mjs
 └── package.json
@@ -461,16 +447,15 @@ landing-page/
 ### Backend Express
 ```bash
 cd backend-express
-pnpm test            # Ejecutar tests
+pnpm test            # Ejecutar tests (Jest + Supertest)
 pnpm test:watch      # Modo watch
 ```
 Usa **Jest** + **Supertest** para tests de integración.
 
-### Web App
+### Frontend
 ```bash
-cd web-app
-pnpm test            # Ejecutar tests
-pnpm test:watch      # Modo watch
+cd frontend
+pnpm exec vitest run    # Ejecutar tests unitarios
 ```
 Usa **Vitest** + **Testing Library** para tests unitarios y de componentes.
 
@@ -488,13 +473,19 @@ pnpm install
 ```bash
 # Verificar qué proceso usa el puerto
 lsof -i :3000    # Backend
-lsof -i :5173    # Web App
+lsof -i :1420    # Frontend (Vite)
 lsof -i :4321    # Landing Page
 ```
 
+### Errores 404 tipo `/api/v1/api/...` o `/api/auth/...`
+El prefijo de la API es **`/api/v1`**. Verifica que:
+1. `frontend/.env` tenga `VITE_API_URL=/api/v1`.
+2. `BACKEND_HOST` y `VITE_BACKEND_HOST` **no** incluyan `/api/v1` (van solo el host y puerto).
+3. Si cambiaste `.env`, reinicia el dev server (`pnpm dev`) — las variables se cargan al arrancar.
+
 ### Error de TypeScript
 ```bash
-cd web-app
+cd frontend
 pnpm build    # Regenerar tipos
 ```
 
@@ -502,7 +493,7 @@ pnpm build    # Regenerar tipos
 ```bash
 cd backend-express
 pnpm prisma:generate
-pnpm prisma:migrate-dev
+npx prisma migrate dev
 ```
 
 ### Docker
@@ -525,7 +516,7 @@ docker compose up
 
 ### Convenciones
 
-- **ESLint** para consistencia en web-app
+- **ESLint** para consistencia en frontend
 - **Prettier** para formato en landing-page
 - **Conventional Commits**
 - TypeScript strict mode habilitado
