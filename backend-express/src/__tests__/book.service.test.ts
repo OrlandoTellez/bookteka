@@ -182,6 +182,7 @@ describe("BookService.uploadBook", () => {
       bookId: "existing-book-id",
       readingTimeSeconds: 0,
       scrollPosition: 0,
+      currentPage: 0,
     });
     expect(result).toEqual({
       bookId: "existing-book-id",
@@ -219,6 +220,7 @@ describe("BookService.uploadBook", () => {
       bookId: "new-book-id",
       readingTimeSeconds: 100,
       scrollPosition: 200,
+      currentPage: 0,
     });
     expect(result.bookId).toBe("new-book-id");
   });
@@ -425,6 +427,57 @@ describe("BookService.updateBookProgress", () => {
     const updateCall = repo.updateUserBook.mock.calls[0];
     expect(updateCall[1].readingTimeSeconds).toBe(200);
     expect(updateCall[1].scrollPosition).toBeUndefined();
+  });
+
+  it("avance sólo página: página mayor a persisted → update con currentPage", async () => {
+    const repo = makeMockRepo({
+      findUserBook: jest.fn(async () => ({
+        id: "ub1",
+        readingTimeSeconds: 100,
+        scrollPosition: 500,
+        currentPage: 5,
+        lastReadAt: new Date(),
+      })),
+      updateUserBook: jest.fn(async (_id, data) => ({ id: "ub1", ...data })),
+    });
+    const svc = new BookService(repo as never);
+
+    await svc.updateBookProgress({
+      userId: "user1",
+      bookId: "book1",
+      body: { currentPage: 12 }, // página sí avanza
+    });
+
+    const updateCall = repo.updateUserBook.mock.calls[0];
+    expect(updateCall[1].currentPage).toBe(12);
+    expect(updateCall[1].scrollPosition).toBeUndefined();
+    expect(updateCall[1].readingTimeSeconds).toBeUndefined();
+  });
+
+  it("noop: página menor o igual a persisted → retorna persisted sin escribir", async () => {
+    const repo = makeMockRepo({
+      findUserBook: jest.fn(async () => ({
+        id: "ub1",
+        readingTimeSeconds: 100,
+        scrollPosition: 500,
+        currentPage: 10,
+        lastReadAt: new Date(),
+      })),
+      updateUserBook: jest.fn(),
+    });
+    const svc = new BookService(repo as never);
+
+    const result = await svc.updateBookProgress({
+      userId: "user1",
+      bookId: "book1",
+      body: { currentPage: 8 },
+    });
+
+    expect(repo.updateUserBook).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      success: true,
+      currentPage: 10,
+    });
   });
 });
 

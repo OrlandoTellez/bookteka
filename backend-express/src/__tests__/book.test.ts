@@ -653,6 +653,55 @@ describe("PATCH /api/books/:id/progress", () => {
     expect(res.body.scrollPosition).toBe(700);
   });
 
+  it("debería persistir currentPage cuando avanza", async () => {
+    jest.unstable_mockModule("@/lib/auth", () => ({
+      auth: {
+        api: {
+          getSession: async () => ({ user: { id: "user1" } }),
+        },
+      },
+    }));
+
+    const mockUserBook = {
+      id: "ub1",
+      readingTimeSeconds: 100,
+      scrollPosition: 500,
+      currentPage: 5,
+      lastReadAt: new Date(2000),
+    };
+    const mockUpdate = jest.fn(async ({ data }: any) => ({
+      ...mockUserBook,
+      ...data,
+    }));
+
+    jest.unstable_mockModule("@/config/prisma", () => ({
+      dbPrisma: {
+        user_book: {
+          findFirst: async () => mockUserBook,
+          update: mockUpdate,
+        },
+      },
+    }));
+
+    jest.unstable_mockModule("@/lib/r2", () => ({ r2: {} }));
+
+    //@ts-ignore
+    const mod = await import("@/server");
+    const app = mod.default;
+
+    const res = await request(app)
+      .patch("/api/books/book1/progress")
+      .send({
+        currentPage: 12,
+      });
+
+    expect(res.status).toBe(200);
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    const updateArgs = mockUpdate.mock.calls[0]?.[0];
+    expect(updateArgs?.data?.currentPage).toBe(12);
+    expect(res.body.currentPage).toBe(12);
+  });
+
   it("debería actualizar solo readingTimeSeconds si el scroll está dentro de la tolerancia", async () => {
     jest.unstable_mockModule("@/lib/auth", () => ({
       auth: {

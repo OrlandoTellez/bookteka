@@ -28,6 +28,12 @@ const lastReadAtSchema = z
 
 export const UpdateBookProgressBodySchema = z.object({
   readingTimeSeconds: z.number().int().nonnegative().optional(),
-  scrollPosition: z.number().int().nonnegative().optional(),
+  currentPage: z.number().int().nonnegative().optional(),
+  scrollPosition: z
+    .number()
+    .nonnegative()
+    .finite()
+    .transform((v) => Math.round(v))
+    .optional(),
   lastReadAt: lastReadAtSchema,
 });

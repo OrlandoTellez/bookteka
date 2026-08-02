@@ -3,4 +3,5 @@ export interface UploadBookRequestDTO {
   author?: string;
   readingTimeSeconds?: string;
   scrollPosition?: string;
+  currentPage?: string;
 }

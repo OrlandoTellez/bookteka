@@ -40,6 +40,7 @@ export class BookService {
       author: body.author || "??",
       readingTimeSeconds: parseInt(body.readingTimeSeconds || "0"),
       scrollPosition: parseInt(body.scrollPosition || "0"),
+      currentPage: parseInt(body.currentPage || "0"),
     };
 
     const fileHash = generateFileHash(file.buffer);
@@ -76,6 +77,7 @@ export class BookService {
       bookId: book.id,
       readingTimeSeconds: dto.readingTimeSeconds,
       scrollPosition: dto.scrollPosition,
+      currentPage: dto.currentPage,
     });
 
     return {
@@ -151,7 +153,11 @@ export class BookService {
       typeof body.scrollPosition === "number" &&
       body.scrollPosition > (userBook.scrollPosition ?? 0) + SCROLL_TOLERANCE_PX;
 
-    if (!isNewerTime && !isNewerScroll) {
+    const isNewerPage =
+      typeof body.currentPage === "number" &&
+      body.currentPage > (userBook.currentPage ?? 0);
+
+    if (!isNewerTime && !isNewerScroll && !isNewerPage) {
       logger.debug(
         {
           bookId,
@@ -159,18 +165,21 @@ export class BookService {
           incoming: {
             scroll: body.scrollPosition,
             time: body.readingTimeSeconds,
+            page: body.currentPage,
           },
           persisted: {
             scroll: userBook.scrollPosition,
             time: userBook.readingTimeSeconds,
+            page: userBook.currentPage,
           },
         },
-        "updateBookProgress noop: scroll/time sin avance"
+        "updateBookProgress noop: scroll/time/page sin avance"
       );
       return {
         success: true,
         readingTimeSeconds: userBook.readingTimeSeconds ?? 0,
         scrollPosition: userBook.scrollPosition ?? 0,
+        currentPage: userBook.currentPage ?? 0,
         lastReadAt: userBook.lastReadAt,
       };
     }
@@ -182,6 +191,9 @@ export class BookService {
     }
     if (isNewerScroll) {
       updateData.scrollPosition = body.scrollPosition;
+    }
+    if (isNewerPage) {
+      updateData.currentPage = body.currentPage;
     }
     if (body.lastReadAt) {
       updateData.lastReadAt = body.lastReadAt;
@@ -195,6 +207,7 @@ export class BookService {
       success: true,
       readingTimeSeconds: updated.readingTimeSeconds,
       scrollPosition: updated.scrollPosition,
+      currentPage: updated.currentPage,
       lastReadAt: updated.lastReadAt,
     };
   }

@@ -56,6 +56,7 @@ export class BookRepository implements IBookRepository {
     bookId,
     readingTimeSeconds,
     scrollPosition,
+    currentPage,
   }: UpsertUserBookInput) => {
     return dbPrisma.user_book.upsert({
       where: {
@@ -69,6 +70,7 @@ export class BookRepository implements IBookRepository {
         bookId,
         readingTimeSeconds,
         scrollPosition,
+        currentPage: currentPage ?? 0,
       },
       update: {},
     });

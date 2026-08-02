@@ -51,6 +51,7 @@ export interface UploadBookInput {
     author?: string;
     readingTimeSeconds?: string;
     scrollPosition?: string;
+    currentPage?: string;
   };
 }
 
@@ -68,6 +69,7 @@ export interface UpsertUserBookInput {
   bookId: string;
   readingTimeSeconds: number;
   scrollPosition: number;
+  currentPage?: number;
 }
 
 export interface DeleteBookInput {
@@ -81,6 +83,7 @@ export interface UpdateBookProgressInput {
   body: {
     readingTimeSeconds?: number;
     scrollPosition?: number;
+    currentPage?: number;
     lastReadAt?: Date;
   };
 }
