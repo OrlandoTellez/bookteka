@@ -2,7 +2,7 @@ import { UserBook } from "@/types/book.js"
 import { jest } from "@jest/globals"
 import request from "supertest"
 
-describe("GET /api/books", () => {
+describe("GET /api/v1/books", () => {
   beforeEach(() => {
     jest.resetModules()
   })
@@ -32,7 +32,7 @@ describe("GET /api/books", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/books")
+    const res = await request(app).get("/api/v1/books")
     expect(res.status).toBe(401)
   })
 
@@ -111,13 +111,13 @@ describe("GET /api/books", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/books")
+    const res = await request(app).get("/api/v1/books")
     expect(res.status).toBe(200)
     expect(res.body).toEqual(expect.any(Array))
   })
 })
 
-describe("POST /api/books/upload", () => {
+describe("POST /api/v1/books/upload", () => {
   beforeEach(() => {
     jest.resetModules()
   })
@@ -144,7 +144,7 @@ describe("POST /api/books/upload", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/books/upload")
+      .post("/api/v1/books/upload")
 
     expect(res.status).toBe(401)
   })
@@ -173,7 +173,7 @@ describe("POST /api/books/upload", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/books/upload")
+      .post("/api/v1/books/upload")
 
     expect(res.status).toBe(400)
   })
@@ -223,7 +223,7 @@ describe("POST /api/books/upload", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/books/upload")
+      .post("/api/v1/books/upload")
       .attach("file", fakeBuffer, "test.pdf")
       .field("title", "Test Book")
       .field("author", "Author Test")
@@ -259,7 +259,7 @@ describe("POST /api/books/upload", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .post("/api/books/upload")
+      .post("/api/v1/books/upload")
       .attach("file", Buffer.from("pdf1"), "a.pdf")
       .attach("file", Buffer.from("pdf2"), "b.pdf");
 
@@ -309,7 +309,7 @@ describe("POST /api/books/upload", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/books/upload")
+      .post("/api/v1/books/upload")
       .attach("file", Buffer.from("pdf"), "test.pdf")
 
     expect(res.status).toBe(200)
@@ -317,7 +317,7 @@ describe("POST /api/books/upload", () => {
   })
 })
 
-describe("DELETE /api/books/:id", () => {
+describe("DELETE /api/v1/books/:id", () => {
   beforeEach(() => {
     jest.resetModules();
   });
@@ -339,7 +339,7 @@ describe("DELETE /api/books/:id", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).delete("/api/books/123");
+    const res = await request(app).delete("/api/v1/books/123");
 
     expect(res.status).toBe(401);
   });
@@ -367,7 +367,7 @@ describe("DELETE /api/books/:id", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).delete("/api/books/123");
+    const res = await request(app).delete("/api/v1/books/123");
 
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Libro no encontrado para este usuario");
@@ -430,7 +430,7 @@ describe("DELETE /api/books/:id", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).delete("/api/books/book1");
+    const res = await request(app).delete("/api/v1/books/book1");
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
@@ -441,7 +441,7 @@ describe("DELETE /api/books/:id", () => {
   });
 })
 
-describe("PATCH /api/books/:id/progress", () => {
+describe("PATCH /api/v1/books/:id/progress", () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -465,7 +465,7 @@ describe("PATCH /api/books/:id/progress", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .patch("/api/books/book1/progress")
+      .patch("/api/v1/books/book1/progress")
       .send({
         readingTimeSeconds: 100,
         scrollPosition: 50,
@@ -499,7 +499,7 @@ describe("PATCH /api/books/:id/progress", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .patch("/api/books/book1/progress")
+      .patch("/api/v1/books/book1/progress")
       .send({
         readingTimeSeconds: 100,
       });
@@ -545,7 +545,7 @@ describe("PATCH /api/books/:id/progress", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .patch("/api/books/book1/progress")
+      .patch("/api/v1/books/book1/progress")
       .send({
         readingTimeSeconds: 200,
         scrollPosition: 80,
@@ -591,7 +591,7 @@ describe("PATCH /api/books/:id/progress", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .patch("/api/books/book1/progress")
+      .patch("/api/v1/books/book1/progress")
       .send({
         readingTimeSeconds: 50,
         scrollPosition: 540,
@@ -639,7 +639,7 @@ describe("PATCH /api/books/:id/progress", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .patch("/api/books/book1/progress")
+      .patch("/api/v1/books/book1/progress")
       .send({
         readingTimeSeconds: 100,
         scrollPosition: 700,
@@ -690,7 +690,7 @@ describe("PATCH /api/books/:id/progress", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .patch("/api/books/book1/progress")
+      .patch("/api/v1/books/book1/progress")
       .send({
         currentPage: 12,
       });
@@ -738,7 +738,7 @@ describe("PATCH /api/books/:id/progress", () => {
     const app = mod.default;
 
     const res = await request(app)
-      .patch("/api/books/book1/progress")
+      .patch("/api/v1/books/book1/progress")
       .send({
         readingTimeSeconds: 200,
         scrollPosition: 510,
@@ -753,7 +753,7 @@ describe("PATCH /api/books/:id/progress", () => {
   });
 });
 
-describe("GET /api/books/:id/download", () => {
+describe("GET /api/v1/books/:id/download", () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -776,7 +776,7 @@ describe("GET /api/books/:id/download", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).get("/api/books/book1/download");
+    const res = await request(app).get("/api/v1/books/book1/download");
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe("No autorizado");
@@ -805,7 +805,7 @@ describe("GET /api/books/:id/download", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).get("/api/books/book1/download");
+    const res = await request(app).get("/api/v1/books/book1/download");
 
     expect(res.status).toBe(403);
   });
@@ -847,7 +847,7 @@ describe("GET /api/books/:id/download", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).get("/api/books/book1/download");
+    const res = await request(app).get("/api/v1/books/book1/download");
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
@@ -856,7 +856,7 @@ describe("GET /api/books/:id/download", () => {
   });
 });
 
-describe("GET /api/books/:id/stream", () => {
+describe("GET /api/v1/books/:id/stream", () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -875,7 +875,7 @@ describe("GET /api/books/:id/stream", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).get("/api/books/book1/stream");
+    const res = await request(app).get("/api/v1/books/book1/stream");
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe("No autorizado");
@@ -904,7 +904,7 @@ describe("GET /api/books/:id/stream", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).get("/api/books/book1/stream");
+    const res = await request(app).get("/api/v1/books/book1/stream");
 
     expect(res.status).toBe(403);
     expect(res.body.error).toBe("No es tu libro");
@@ -943,7 +943,7 @@ describe("GET /api/books/:id/stream", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).get("/api/books/book1/stream");
+    const res = await request(app).get("/api/v1/books/book1/stream");
 
     expect(res.status).toBe(500);
     expect(res.body.error).toBe("Error al obtener el archivo");
@@ -996,7 +996,7 @@ describe("GET /api/books/:id/stream", () => {
     const mod = await import("@/server");
     const app = mod.default;
 
-    const res = await request(app).get("/api/books/book1/stream");
+    const res = await request(app).get("/api/v1/books/book1/stream");
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("application/pdf");

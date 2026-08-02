@@ -12,7 +12,9 @@ const LAN_BACKEND = (import.meta.env.VITE_BACKEND_HOST ?? "")
   .trim()
   .replace(/\/+$/, "");
 
-const RELATIVE_API = (import.meta.env.VITE_API_URL ?? "/api").trim() || "/api";
+const RELATIVE_API = (import.meta.env.VITE_API_URL ?? "/api/v1").trim() || "/api/v1";
 
 export const API_BASE: string =
-  isAndroidWebView() && LAN_BACKEND ? `${LAN_BACKEND}/api` : RELATIVE_API;
+  isAndroidWebView() && LAN_BACKEND
+    ? `${LAN_BACKEND}${RELATIVE_API}`
+    : RELATIVE_API;

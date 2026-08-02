@@ -15,16 +15,16 @@ export const streak: Router = Router();
 
 streak.use(requireAuth);
 
-streak.get("/streak", getUserStreak);
+streak.get("/", getUserStreak);
 
 streak.post(
-  "/streak/complete",
+  "/complete",
   validate({ body: CompleteDayBodySchema }),
   completeDay,
 );
 
 streak.post(
-  "/streak/initialize",
+  "/initialize",
   validate({ body: InitializeStreakBodySchema }),
   initializeStreak,
 );

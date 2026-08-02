@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals"
 import request from "supertest"
 
-describe("GET /api/books/:bookId/bookmarks", () => {
+describe("GET /api/v1/books/:bookId/bookmarks", () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
@@ -28,7 +28,7 @@ describe("GET /api/books/:bookId/bookmarks", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/books/book1/bookmarks")
+    const res = await request(app).get("/api/v1/books/book1/bookmarks")
     expect(res.status).toBe(401)
     expect(res.body.error).toBe("No autorizado")
   })
@@ -60,7 +60,7 @@ describe("GET /api/books/:bookId/bookmarks", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/books/book1/bookmarks")
+    const res = await request(app).get("/api/v1/books/book1/bookmarks")
     expect(res.status).toBe(403)
     expect(res.body.error).toBe("No autorizado o libro no encontrado")
   })
@@ -100,13 +100,13 @@ describe("GET /api/books/:bookId/bookmarks", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/books/book1/bookmarks")
+    const res = await request(app).get("/api/v1/books/book1/bookmarks")
     expect(res.status).toBe(200)
     expect(res.body).toEqual(mockBookmarks)
   })
 })
 
-describe("POST /api/books/:bookId/bookmarks", () => {
+describe("POST /api/v1/books/:bookId/bookmarks", () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
@@ -134,7 +134,7 @@ describe("POST /api/books/:bookId/bookmarks", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/books/book1/bookmarks")
+      .post("/api/v1/books/book1/bookmarks")
       .send({ name: "Test", pageNumber: 1 })
 
     expect(res.status).toBe(401)
@@ -169,7 +169,7 @@ describe("POST /api/books/:bookId/bookmarks", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/books/book1/bookmarks")
+      .post("/api/v1/books/book1/bookmarks")
       .send({ name: "Test", pageNumber: 1 })
 
     expect(res.status).toBe(403)
@@ -204,7 +204,7 @@ describe("POST /api/books/:bookId/bookmarks", () => {
     const app = mod.default
 
     const res1 = await request(app)
-      .post("/api/books/book1/bookmarks")
+      .post("/api/v1/books/book1/bookmarks")
       .send({ name: "Test" })
 
     expect(res1.status).toBe(400)
@@ -212,7 +212,7 @@ describe("POST /api/books/:bookId/bookmarks", () => {
     expect(res1.body.details[0].path).toBe("pageNumber")
 
     const res2 = await request(app)
-      .post("/api/books/book1/bookmarks")
+      .post("/api/v1/books/book1/bookmarks")
       .send({ pageNumber: 1 })
 
     expect(res2.status).toBe(400)
@@ -220,7 +220,7 @@ describe("POST /api/books/:bookId/bookmarks", () => {
     expect(res2.body.details[0].path).toBe("name")
 
     const res3 = await request(app)
-      .post("/api/books/book1/bookmarks")
+      .post("/api/v1/books/book1/bookmarks")
       .send({ name: "Test", pageNumber: "uno" })
 
     expect(res3.status).toBe(400)
@@ -268,7 +268,7 @@ describe("POST /api/books/:bookId/bookmarks", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/books/book1/bookmarks")
+      .post("/api/v1/books/book1/bookmarks")
       .send({
         name: "Test Bookmark",
         pageNumber: 1,
@@ -280,7 +280,7 @@ describe("POST /api/books/:bookId/bookmarks", () => {
   })
 })
 
-describe("DELETE /api/books/:bookId/bookmarks/:bookmarkId", () => {
+describe("DELETE /api/v1/books/:bookId/bookmarks/:bookmarkId", () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
@@ -307,7 +307,7 @@ describe("DELETE /api/books/:bookId/bookmarks/:bookmarkId", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).delete("/api/books/book1/bookmarks/bm1")
+    const res = await request(app).delete("/api/v1/books/book1/bookmarks/bm1")
     expect(res.status).toBe(401)
     expect(res.body.error).toBe("No autorizado")
   })
@@ -339,7 +339,7 @@ describe("DELETE /api/books/:bookId/bookmarks/:bookmarkId", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).delete("/api/books/book1/bookmarks/bm1")
+    const res = await request(app).delete("/api/v1/books/book1/bookmarks/bm1")
     expect(res.status).toBe(403)
     expect(res.body.error).toBe("No autorizado o libro no encontrado")
   })
@@ -374,7 +374,7 @@ describe("DELETE /api/books/:bookId/bookmarks/:bookmarkId", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).delete("/api/books/book1/bookmarks/bm1")
+    const res = await request(app).delete("/api/v1/books/book1/bookmarks/bm1")
     expect(res.status).toBe(404)
     expect(res.body.error).toBe("Bookmark no encontrado")
   })
@@ -410,7 +410,7 @@ describe("DELETE /api/books/:bookId/bookmarks/:bookmarkId", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).delete("/api/books/book1/bookmarks/bm1")
+    const res = await request(app).delete("/api/v1/books/book1/bookmarks/bm1")
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ success: true })
   })

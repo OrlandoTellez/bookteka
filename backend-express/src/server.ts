@@ -47,18 +47,6 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
-app.use("/api/auth/get-session", sessionLimiter);
-app.use("/api/auth", authLimiter, authRoutes);
-
-app.use("/api", (req, res, next) => {
-  if (isProgressPath(req.path)) {
-    return progressLimiter(req, res, next);
-  }
-  return next();
-});
-
-app.use("/api", globalLimiter);
-
 const HEALTHCHECK_TIMEOUT_MS = 2_000;
 
 const withTimeout = <T,>(
@@ -77,7 +65,7 @@ const withTimeout = <T,>(
   return Promise.race<T>([promise, timeout]);
 };
 
-app.get("/api/health", async (_req, res) => {
+app.get("/api/v1/health", async (_req, res) => {
   let dbOk = false;
   try {
     await withTimeout(dbPrisma.$queryRaw`SELECT 1`, HEALTHCHECK_TIMEOUT_MS, "db");
@@ -107,9 +95,20 @@ app.get("/api/health", async (_req, res) => {
   });
 });
 
-app.use("/api/books", bookRoutes);
-app.use("/api/books", bookmarkRoutes);
-app.use("/api", streakRoutes);
+app.use("/api/v1/auth/get-session", sessionLimiter);
+app.use("/api/v1/auth", authLimiter, authRoutes);
+
+app.use("/api/v1", (req, res, next) => {
+  if (isProgressPath(req.path)) {
+    return progressLimiter(req, res, next);
+  }
+  return next();
+});
+
+app.use("/api/v1", globalLimiter);
+app.use("/api/v1/books", bookRoutes);
+app.use("/api/v1/books", bookmarkRoutes);
+app.use("/api/v1/streak", streakRoutes);
 
 app.use((_req: Request, res: Response, _next: NextFunction) => {
   res.status(404).json({ error: "Ruta no encontrada" });

@@ -42,7 +42,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: /api
+        VITE_API_URL: /api/v1
     ports:
       - "8081:8080"
     depends_on:

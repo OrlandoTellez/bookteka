@@ -15,7 +15,7 @@ export const httpLogger = pinoHttp({
     return id;
   },
   autoLogging: {
-    ignore: (req) => req.url?.startsWith("/api/health") ?? false,
+    ignore: (req) => req.url?.startsWith("/api/v1/health") ?? false,
   },
   customLogLevel: (_req, res, err) => {
     if (err || (res.statusCode ?? 0) >= 500) return "error";

@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals"
 import request from "supertest"
 
-describe("GET /api/streak", () => {
+describe("GET /api/v1/streak", () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
@@ -31,7 +31,7 @@ describe("GET /api/streak", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/streak")
+    const res = await request(app).get("/api/v1/streak")
     expect(res.status).toBe(401)
     expect(res.body.error).toBe("No autorizado")
   })
@@ -74,7 +74,7 @@ describe("GET /api/streak", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/streak")
+    const res = await request(app).get("/api/v1/streak")
     expect(res.status).toBe(200)
     expect(res.body.currentStreak).toBe(0)
     expect(res.body.hasCompletedToday).toBe(false)
@@ -117,14 +117,14 @@ describe("GET /api/streak", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).get("/api/streak")
+    const res = await request(app).get("/api/v1/streak")
     expect(res.status).toBe(200)
     expect(res.body.currentStreak).toBe(5)
     expect(res.body.hasCompletedToday).toBe(true)
   })
 })
 
-describe("POST /api/streak/complete", () => {
+describe("POST /api/v1/streak/complete", () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
@@ -149,7 +149,7 @@ describe("POST /api/streak/complete", () => {
     const mod = await import("@/server")
     const app = mod.default
 
-    const res = await request(app).post("/api/streak/complete")
+    const res = await request(app).post("/api/v1/streak/complete")
     expect(res.status).toBe(401)
     expect(res.body.error).toBe("No autorizado")
   })
@@ -188,7 +188,7 @@ describe("POST /api/streak/complete", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/streak/complete")
+      .post("/api/v1/streak/complete")
       .send({ clientDate: "2024-01-15" })
 
     expect(res.status).toBe(200)
@@ -248,7 +248,7 @@ describe("POST /api/streak/complete", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/streak/complete")
+      .post("/api/v1/streak/complete")
       .send({ clientDate: "2024-01-15" })
 
     expect(res.status).toBe(200)
@@ -291,7 +291,7 @@ describe("POST /api/streak/complete", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/streak/complete")
+      .post("/api/v1/streak/complete")
       .send({ clientDate: "2024-01-15" })
 
     expect(res.status).toBe(200)
@@ -301,7 +301,7 @@ describe("POST /api/streak/complete", () => {
   })
 })
 
-describe("POST /api/streak/initialize", () => {
+describe("POST /api/v1/streak/initialize", () => {
   beforeEach(() => {
     jest.resetModules()
     jest.clearAllMocks()
@@ -327,7 +327,7 @@ describe("POST /api/streak/initialize", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/streak/initialize")
+      .post("/api/v1/streak/initialize")
       .send({ startDate: "2024-01-01" })
 
     expect(res.status).toBe(401)
@@ -356,7 +356,7 @@ describe("POST /api/streak/initialize", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/streak/initialize")
+      .post("/api/v1/streak/initialize")
       .send({})
 
     expect(res.status).toBe(400)
@@ -402,7 +402,7 @@ describe("POST /api/streak/initialize", () => {
     const app = mod.default
 
     const res = await request(app)
-      .post("/api/streak/initialize")
+      .post("/api/v1/streak/initialize")
       .send({ startDate: "2024-01-01" })
 
     expect(res.status).toBe(200)
