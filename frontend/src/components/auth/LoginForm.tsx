@@ -1,0 +1,111 @@
+import styles from "./Auth.module.css";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/common/Input.tsx";
+import {
+  loginSchema,
+  type LoginData,
+} from "../../validations/loginValidations.ts";
+import { Link, useNavigate } from "react-router-dom";
+import { authApi } from "@/lib/auth-api";
+import { invalidateAuthSession } from "@/lib/useAuthSession";
+import { useState } from "react";
+import logoDark from "../../assets/logoDark.svg";
+import logoLight from "../../assets/logoLight.svg";
+import { useTheme } from "@/context/ThemeContext";
+import { IconTheme } from "../common/IconTheme.tsx";
+
+export const LoginForm = () => {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { theme } = useTheme();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+  });
+
+  const onSubmit = async (dataForm: LoginData) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await authApi.login(dataForm.email, dataForm.password);
+      invalidateAuthSession();
+      navigate("/");
+    } catch (err) {
+      console.error("Error inesperado:", err);
+      setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
+      setLoading(false);
+    }
+  };
+
+  const onError = (errors: any) => {
+    console.log("Errores de validación:", errors);
+  };
+
+  return (
+    <article className={styles.container}>
+      <div className={styles.iconContainer}>
+        <IconTheme />
+      </div>
+
+      <div className={styles.logo}>
+        {theme == "dark" ? (
+          <>
+            <img src={logoDark} alt="logo bookteka" />
+          </>
+        ) : (
+          <>
+            <img src={logoLight} alt="logo bookteka" />
+          </>
+        )}
+        <h1>Bookteka</h1>
+      </div>
+
+      <form className={styles.form} onSubmit={handleSubmit(onSubmit, onError)}>
+        <h4>Login</h4>
+        <p>Enter your credentials to log in</p>
+        {error && (
+          <div style={{ color: "var(--error-color)", marginBottom: "10px" }}>
+            {error}
+          </div>
+        )}
+        <div className={styles.inputs}>
+          <Input
+            label="Email"
+            type="email"
+            placeholder="email@ejemplo.com"
+            error={errors.email?.message}
+            register={register}
+            name="email"
+          />
+
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Password"
+            error={errors.password?.message}
+            register={register}
+            name="password"
+          />
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Cargando..." : "Submit"}
+          </button>
+        </div>
+      </form>
+      <div className={styles.notAccount}>
+        <span>
+          Don't have an account?{" "}
+          <Link to={"/auth/register"}>Register here</Link>
+        </span>
+      </div>
+    </article>
+  );
+};

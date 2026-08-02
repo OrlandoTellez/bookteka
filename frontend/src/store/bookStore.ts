@@ -1,0 +1,808 @@
+import type { Book, Bookmark, Highlight } from "@/types/book";
+import { create } from "zustand";
+import {
+  getAllBooks,
+  getBook,
+  saveBook,
+  deleteBook as deleteBookFromDB,
+  updateBookReadingTime,
+  updateBookScrollPosition,
+  updateBookCurrentPage,
+  setBookReadingTime,
+  getBookmarksByBook,
+  getBookmark,
+  saveBookmark,
+  updateBookmark as updateBookmarkInDB,
+  deleteBookmark as deleteBookmarkFromDB,
+  getHighlightsByBook,
+  saveHighlight,
+  deleteHighlight as deleteHighlightFromDB,
+  setCurrentUserId,
+  syncBooksFromCloud,
+} from "@/database";
+import { generateId } from "@/utils/generateId";
+import { getCachedSession } from "@/lib/sessionCache";
+import { processBookForReading } from "@/lib/pdfService";
+import { deleteBookInCloud, updateBookProgress, uploadBook } from "@/api/book";
+import {
+  createBookmark as createBookmarkApi,
+  deleteBookmark as deleteBookmarkApi,
+  updateBookmark as updateBookmarkApi,
+} from "@/api/bookmark";
+import { useUserPreferences } from "./userPreferencesStore";
+
+type View = "library" | "reader" | "profile";
+
+interface BookStore {
+  // Estado
+  books: Book[];
+  isLoading: boolean;
+  error: string | null;
+  showUploader: boolean;
+  currentView: View;
+  currentBook: Book | null;
+  isSyncing: boolean;
+  isProcessingPdf: boolean;
+  pdfProgress: number;
+  downloadingBookId: string;
+  uploadingBookId: string | null;
+
+  // Acciones CRUD
+  addBook: (name: string, text: string, totalPages?: number, file?: File) => Promise<Book>;
+  deleteBook: (id: string) => Promise<void>;
+  getBookById: (id: string) => Promise<Book | null>;
+  loadBooks: () => Promise<void>;
+  syncBooks: () => Promise<void>;
+
+  // Acciones de lectura
+  updateReadingTime: (id: string, seconds: number) => Promise<void>;
+  setReadingTime: (id: string, totalSeconds: number) => Promise<void>;
+  updateScrollPosition: (id: string, position: number) => Promise<void>;
+  updateCurrentPage: (id: string, page: number) => Promise<void>;
+
+  // Acciones de UI
+  setShowUploader: (show: boolean) => void;
+  setCurrentView: (view: View) => void;
+  setCurrentBook: (book: Book | null) => void;
+
+  // Acciones de bookmarks
+  loadBookmarks: (bookId: string) => Promise<Bookmark[]>;
+  addBookmark: (bookmark: Bookmark) => Promise<Bookmark>;
+  updateBookmark: (id: string, data: { name?: string; textPreview?: string }) => Promise<Bookmark | undefined>;
+  removeBookmark: (id: string) => Promise<void>;
+
+  // Acciones de highlights
+  loadHighlights: (bookId: string) => Promise<Highlight[]>;
+  addHighlight: (highlight: Highlight) => Promise<void>;
+  removeHighlight: (id: string) => Promise<void>;
+
+  // Acciones de sincronización manual
+  uploadBookToCloud: (bookId: string) => Promise<void>;
+  downloadBookFromCloud: (bookId: string) => Promise<void>;
+}
+
+type PendingCloudProgress = {
+  scrollPosition?: number;
+  readingTimeSeconds?: number;
+  currentPage?: number;
+  lastReadAt?: number;
+};
+
+// Coalescer de PATCH /progress por libro. Cada llamada a
+// `scheduleCloudProgress(bookId, patch)` mezcla los campos nuevos en un
+// registro `pending` por libro y reinicia un timer. Cuando vence el timer
+// se envía 1 fetch con TODOS los campos pendientes mezclados, evitando
+// storms de PATCH cuando concurren scroll + reading timer.
+const CLOUD_COALESCE_MS = 3000;
+const cloudCoalescers = new Map<
+  string,
+  { pending: PendingCloudProgress; timer: ReturnType<typeof setTimeout> | null }
+>();
+
+function flushCoalescerNow(
+  bookId: string,
+  pending: PendingCloudProgress,
+  options: { keepalive?: boolean } = {},
+): void {
+  const payload: PendingCloudProgress = { ...pending };
+  if (Object.keys(payload).length === 0) return;
+  const book = useBookStore.getState().books.find((b) => b.id === bookId);
+  if (!book?.isSynced) return;
+  // Aseguramos siempre un `lastReadAt` fresco si vamos a persistir.
+  if (payload.lastReadAt === undefined) {
+    payload.lastReadAt = Date.now();
+  }
+  updateBookProgress(bookId, payload, options).catch((err) => {
+    console.error("[Progress] Cloud sync failed:", err);
+  });
+}
+
+function scheduleCloudProgress(
+  bookId: string,
+  patch: PendingCloudProgress,
+): void {
+  let entry = cloudCoalescers.get(bookId);
+  if (!entry) {
+    entry = { pending: {}, timer: null };
+    cloudCoalescers.set(bookId, entry);
+  }
+  if (patch.scrollPosition !== undefined) {
+    entry.pending.scrollPosition = patch.scrollPosition;
+  }
+  if (patch.readingTimeSeconds !== undefined) {
+    entry.pending.readingTimeSeconds = patch.readingTimeSeconds;
+  }
+  if (patch.currentPage !== undefined) {
+    entry.pending.currentPage = patch.currentPage;
+  }
+  if (patch.lastReadAt !== undefined) {
+    entry.pending.lastReadAt = patch.lastReadAt;
+  }
+
+  if (entry.timer !== null) clearTimeout(entry.timer);
+  entry.timer = setTimeout(() => {
+    entry!.timer = null;
+    const pending = entry!.pending;
+    entry!.pending = {};
+    flushCoalescerNow(bookId, pending);
+  }, CLOUD_COALESCE_MS);
+}
+
+/**
+ * Fuerza el envío inmediato de cualquier PATCH pendiente. Útil en
+ * `pagehide`, `visibilitychange:hidden`, antes de cerrar la pestaña o
+ * al desmontar el reader. El flag `keepalive` permite que la request
+ * sobreviva al unload del navegador (la posición final llega aunque el
+ * usuario cierre la ventana de inmediato).
+ *
+ * Si no se pasa `bookId`, flushea todas las colas pendientes
+ * (comportamiento usado en eventos a nivel de window).
+ */
+export function flushPendingCloudProgress(
+  bookId?: string,
+  options: { keepalive?: boolean } = {},
+): void {
+  if (bookId !== undefined) {
+    const entry = cloudCoalescers.get(bookId);
+    if (!entry) return;
+    if (entry.timer !== null) {
+      clearTimeout(entry.timer);
+      entry.timer = null;
+    }
+    const pending = entry.pending;
+    entry.pending = {};
+    flushCoalescerNow(bookId, pending, options);
+    return;
+  }
+  for (const [id, entry] of cloudCoalescers) {
+    if (entry.timer !== null) {
+      clearTimeout(entry.timer);
+      entry.timer = null;
+    }
+    const pending = entry.pending;
+    entry.pending = {};
+    flushCoalescerNow(id, pending, options);
+  }
+}
+
+/**
+ * Elimina la entrada del coalescer para un libro. Sin esto el
+ * `cloudCoalescers` Map crece sin límite a lo largo de sesiones largas
+ * (cada libro tocado deja un entry). Llamado desde `deleteBook`.
+ */
+export function deleteCloudCoalescer(bookId: string): void {
+  const entry = cloudCoalescers.get(bookId);
+  if (!entry) return;
+  if (entry.timer !== null) {
+    clearTimeout(entry.timer);
+    entry.timer = null;
+  }
+  cloudCoalescers.delete(bookId);
+}
+
+export const useBookStore = create<BookStore>((set) => ({
+  // Estado inicial
+  books: [],
+  isLoading: false,
+  error: null,
+  showUploader: false,
+  currentView: "library",
+  currentBook: null,
+  isSyncing: false,
+  isProcessingPdf: false,
+  pdfProgress: 0,
+  downloadingBookId: "",
+  uploadingBookId: null,
+
+  // Cargar todos los libros (desde cache local + sincronizar con nube)
+  loadBooks: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const session = await getCachedSession();
+      if (session?.user?.id) {
+        // Establecer el usuario actual en la base de datos
+        setCurrentUserId(session.user.id);
+      }
+
+      // Sincronizar con la nube primero para obtener datos actualizados de otros dispositivos
+      try {
+        await syncBooksFromCloud();
+      } catch (syncError) {
+        // Si falla la sincronización, continuamos con datos locales
+        console.warn("No se pudo sincronizar con la nube, usando datos locales:", syncError);
+      }
+
+      // Cargar libros después de sincronizar
+      const loadedBooks = await getAllBooks();
+      set({ books: loadedBooks, isLoading: false });
+    } catch (error) {
+      console.error("Error loading books:", error);
+      set({ error: "Error al cargar los libros", isLoading: false });
+    }
+  },
+
+  // Sincronizar libros desde la nube
+  syncBooks: async () => {
+    set({ isSyncing: true, error: null });
+    try {
+      const session = await getCachedSession();
+      if (!session?.user?.id) {
+        throw new Error("No hay sesión activa");
+      }
+
+      // Establecer el usuario actual en la base de datos
+      setCurrentUserId(session.user.id);
+
+      // Sincronizar desde la nube
+      await syncBooksFromCloud();
+
+      // Recargar libros locales después de sincronizar
+      const loadedBooks = await getAllBooks();
+      set({ books: loadedBooks, isSyncing: false });
+    } catch (error) {
+      console.error("Error syncing books:", error);
+      set({ error: "Error al sincronizar libros", isSyncing: false });
+    }
+  },
+
+  // Añadir un libro nuevo
+  addBook: async (
+    name: string,
+    text: string,
+    totalPages?: number,
+    file?: File,
+  ): Promise<Book> => {
+    // Verificar que hay sesión activa y establecer el usuario actual
+    const session = await getCachedSession();
+    if (!session?.user?.id) {
+      throw new Error("No hay sesión activa");
+    }
+    setCurrentUserId(session.user.id);
+
+    // Obtener preferencia del usuario
+    const cloudSyncEnabled = useUserPreferences.getState().cloudSyncEnabled;
+
+    let bookId: string;
+    let isSynced = false;
+
+    // Solo subir a la nube si está habilitado Y hay archivo
+    if (file && cloudSyncEnabled) {
+      try {
+        const formData = new FormData();
+
+        formData.append("pdf", file);
+        formData.append("title", name);
+
+        const id = await uploadBook(formData);
+
+        bookId = id;
+        isSynced = true;
+      } catch (error) {
+        console.error("Error al subir al backend:", error);
+        // Si falla la subida, guardamos igual pero sin sincronizar
+        bookId = generateId();
+      }
+    } else {
+      // Sin archivo o sin sync, generar ID local
+      bookId = generateId();
+    }
+
+    const newBook: Book = {
+      id: bookId,
+      name,
+      text,
+      createdAt: Date.now(),
+      lastReadAt: Date.now(),
+      readingTimeSeconds: 0,
+      scrollPosition: 0,
+      totalPages,
+      fileBlob: file,
+      isSynced,
+    };
+
+    try {
+      await saveBook(newBook);
+      set((state) => ({ books: [newBook, ...state.books] }));
+      return newBook;
+    } catch (error) {
+      console.error("Error adding book:", error);
+      set({ error: "Error al añadir el libro" });
+      throw error;
+    }
+  },
+
+  // Eliminar un libro
+  deleteBook: async (id: string) => {
+    try {
+      const session = await getCachedSession();
+
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
+      if (!id) return
+
+      // Descartar cualquier PATCH pendiente del libro antes de borrarlo,
+      // así no terminamos enviando updates de un libro que ya no existe.
+      deleteCloudCoalescer(id);
+
+      // Obtener el libro para ver si está sincronizado
+      const bookToDelete = await getBook(id);
+
+      // SIEMPRE eliminar del cloud si el libro está sincronizado (isSynced = true)
+      if (bookToDelete?.isSynced) {
+        try {
+          await deleteBookInCloud(id);
+        } catch (error) {
+          console.error("Error al eliminar del cloud:", error);
+        }
+      }
+
+      // Eliminar de la base de datos local (IndexedDB)
+      await deleteBookFromDB(id);
+      set((state) => ({
+        books: state.books.filter((book) => book.id !== id),
+      }));
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      set({ error: "Error al eliminar el libro" });
+      throw error;
+    }
+  },
+
+  // Obtener un libro por ID
+  getBookById: async (id: string): Promise<Book | null> => {
+    try {
+      let book = await getBook(id);
+
+      if (!book) return null;
+
+      // Verificar si necesita descargar el PDF
+      const needsDownload = book.fileUrl && (!book.text || book.text.length < 10);
+
+      if (needsDownload) {
+        set({ isProcessingPdf: true, pdfProgress: 0, downloadingBookId: id });
+
+        try {
+          // Descargar y procesar el PDF
+          const processedBook = await processBookForReading(book, (progress) => {
+            set({ pdfProgress: progress });
+          });
+
+          // IMPORTANTE: Preservar el progreso de lectura existente al procesar el PDF
+          const bookWithProgress: Book = {
+            ...processedBook,
+            readingTimeSeconds: book.readingTimeSeconds,
+            scrollPosition: book.scrollPosition,
+            lastReadAt: book.lastReadAt,
+          };
+
+          // Guardar el libro actualizado en IndexedDB
+          await saveBook(bookWithProgress);
+
+          // Actualizar en la lista de libros
+          set((state) => ({
+            books: state.books.map((b) =>
+              b.id === id ? bookWithProgress : b
+            ),
+            // También actualizar currentBook si es el mismo libro
+            currentBook: state.currentBook?.id === id ? bookWithProgress : state.currentBook,
+          }));
+
+          book = bookWithProgress;
+        } catch (pdfError) {
+          console.error("Error downloading PDF:", pdfError);
+          set({ error: "Error al procesar el PDF" });
+        } finally {
+          set({ isProcessingPdf: false, pdfProgress: 0, downloadingBookId: undefined });
+        }
+      }
+
+      return book;
+    } catch (error) {
+      console.error("Error getting book:", error);
+      set({ error: "Error al obtener el libro" });
+      return null;
+    }
+  },
+
+  // Actualizar tiempo de lectura (incrementar).
+  // El PATCH al cloud se agenda SINCRÓNICAMENTE antes del await a
+  // IndexedDB: si `flushPendingCloudProgress` corre por `pagehide`
+  // mientras esta función sigue ejecutando, queremos que el pending
+  // ya tenga el valor nuevo. La coalescer de 3s + el keepalive del
+  // flush se encargan del resto.
+  updateReadingTime: async (id: string, seconds: number) => {
+    try {
+      let newTime = 0;
+      set((state) => {
+        const book = state.books.find(b => b.id === id);
+        newTime = (book?.readingTimeSeconds || 0) + seconds;
+        return {
+          books: state.books.map((b) =>
+            b.id === id ? { ...b, readingTimeSeconds: newTime } : b,
+          ),
+        };
+      });
+
+      scheduleCloudProgress(id, {
+        readingTimeSeconds: newTime,
+        lastReadAt: Date.now(),
+      });
+
+      await updateBookReadingTime(id, seconds);
+    } catch (error) {
+      console.error("Error updating reading time:", error);
+      set({ error: "Error al actualizar tiempo de lectura" });
+    }
+  },
+
+  // Establecer tiempo de lectura (valor absoluto). Mismo orden:
+  // coalesce cloud sync ANTES del await a IndexedDB.
+  setReadingTime: async (id: string, totalSeconds: number) => {
+    try {
+      scheduleCloudProgress(id, {
+        readingTimeSeconds: totalSeconds,
+        lastReadAt: Date.now(),
+      });
+
+      set((state) => ({
+        books: state.books.map((b) =>
+          b.id === id ? { ...b, readingTimeSeconds: totalSeconds } : b,
+        ),
+      }));
+
+      await setBookReadingTime(id, totalSeconds);
+    } catch (error) {
+      console.error("Error setting reading time:", error);
+      set({ error: "Error al establecer tiempo de lectura" });
+    }
+  },
+
+  // Actualizar posición de scroll. Mismo orden: coalesce cloud sync
+  // ANTES del await a IndexedDB para evitar race en pagehide.
+  updateScrollPosition: async (id: string, position: number) => {
+    try {
+      scheduleCloudProgress(id, {
+        scrollPosition: position,
+        lastReadAt: Date.now(),
+      });
+
+      set((state) => ({
+        books: state.books.map((b) =>
+          b.id === id ? { ...b, scrollPosition: position } : b,
+        ),
+      }));
+
+      await updateBookScrollPosition(id, position);
+    } catch (error) {
+      console.error("Error updating scroll position:", error);
+      set({ error: "Error al actualizar posición de scroll" });
+    }
+  },
+
+  // Actualizar página actual de lectura. Mismo patrón que el scroll:
+  // coalesce cloud sync ANTES del await a IndexedDB.
+  updateCurrentPage: async (id: string, page: number) => {
+    try {
+      scheduleCloudProgress(id, {
+        currentPage: page,
+        lastReadAt: Date.now(),
+      });
+
+      set((state) => ({
+        books: state.books.map((b) =>
+          b.id === id ? { ...b, currentPage: page } : b,
+        ),
+      }));
+
+      await updateBookCurrentPage(id, page);
+    } catch (error) {
+      console.error("Error updating current page:", error);
+      set({ error: "Error al actualizar página actual" });
+    }
+  },
+
+  // Acciones de UI
+  setShowUploader: (show: boolean) => set({ showUploader: show }),
+  setCurrentView: (view: View) => set({ currentView: view }),
+  setCurrentBook: (book: Book | null) => set({ currentBook: book }),
+
+  // Cargar bookmarks de un libro
+  loadBookmarks: async (bookId: string) => {
+    try {
+      return await getBookmarksByBook(bookId);
+    } catch (error) {
+      console.error("Error loading bookmarks:", error);
+      return [];
+    }
+  },
+
+  // Agregar bookmark (local + sync a backend si el libro está en la nube)
+  addBookmark: async (bookmark: Bookmark): Promise<Bookmark> => {
+    try {
+      await saveBookmark(bookmark);
+
+      // Sincronizar con backend si el libro está en la nube
+      const book = useBookStore.getState().books.find(b => b.id === bookmark.bookId);
+      if (book?.isSynced) {
+        try {
+          const serverBm = await createBookmarkApi(bookmark.bookId, {
+            name: bookmark.name,
+            pageNumber: bookmark.pageNumber,
+            textPreview: bookmark.textPreview,
+          });
+
+          // Actualizar el ID local con el del servidor
+          const syncedBookmark: Bookmark = {
+            ...bookmark,
+            id: serverBm.id,
+            userId: serverBm.userId,
+          };
+          await deleteBookmarkFromDB(bookmark.id);
+          await saveBookmark(syncedBookmark);
+
+          return syncedBookmark;
+        } catch (apiError) {
+          // Si falla la sync, el marcador sigue existiendo localmente
+          console.error("Error syncing bookmark to backend:", apiError);
+        }
+      }
+
+      return bookmark;
+    } catch (error) {
+      console.error("Error adding bookmark:", error);
+      set({ error: "Error al añadir marcador" });
+      throw error;
+    }
+  },
+
+  // Actualizar bookmark (local + sync a backend si el libro está en la nube)
+  updateBookmark: async (id, data) => {
+    try {
+      const updated = await updateBookmarkInDB(id, data);
+      if (!updated) {
+        console.warn("[Bookmark] No se encontró marcador para actualizar:", id);
+        return undefined;
+      }
+
+      // Sincronizar con backend si el libro está en la nube
+      const book = useBookStore.getState().books.find(
+        (b) => b.id === updated.bookId,
+      );
+      if (book?.isSynced) {
+        try {
+          await updateBookmarkApi(updated.bookId, id, {
+            name: updated.name,
+            textPreview: updated.textPreview,
+          });
+        } catch (apiError) {
+          // Si falla la sync (p. ej. backend sin PATCH), el cambio sigue localmente
+          console.error("Error syncing bookmark update to backend:", apiError);
+        }
+      }
+
+      return updated;
+    } catch (error) {
+      console.error("Error updating bookmark:", error);
+      set({ error: "Error al actualizar marcador" });
+      throw error;
+    }
+  },
+
+  // Eliminar bookmark (local + backend si el libro está en la nube)
+  removeBookmark: async (id: string) => {
+    try {
+      // Obtener el bookmark para conocer el bookId
+      const bookmark = await getBookmark(id);
+      if (!bookmark) {
+        console.warn("Bookmark no encontrado para eliminar:", id);
+        return;
+      }
+
+      // Sincronizar eliminación con backend si el libro está en la nube
+      const book = useBookStore.getState().books.find(b => b.id === bookmark.bookId);
+      if (book?.isSynced) {
+        try {
+          await deleteBookmarkApi(bookmark.bookId, id);
+        } catch (apiError) {
+          console.error("Error deleting bookmark from backend:", apiError);
+        }
+      }
+
+      await deleteBookmarkFromDB(id);
+    } catch (error) {
+      console.error("Error removing bookmark:", error);
+      set({ error: "Error al eliminar marcador" });
+      throw error;
+    }
+  },
+
+  // Cargar highlights de un libro
+  loadHighlights: async (bookId: string) => {
+    try {
+      return await getHighlightsByBook(bookId);
+    } catch (error) {
+      console.error("Error loading highlights:", error);
+      return [];
+    }
+  },
+
+  // Agregar highlight
+  addHighlight: async (highlight: Highlight) => {
+    try {
+      await saveHighlight(highlight);
+    } catch (error) {
+      console.error("Error adding highlight:", error);
+      set({ error: "Error al añadir resaltado" });
+      throw error;
+    }
+  },
+
+  // Eliminar highlight
+  removeHighlight: async (id: string) => {
+    try {
+      await deleteHighlightFromDB(id);
+    } catch (error) {
+      console.error("Error removing highlight:", error);
+      set({ error: "Error al eliminar resaltado" });
+      throw error;
+    }
+  },
+
+  // Subir un libro específico a la nube manualmente
+  uploadBookToCloud: async (bookId: string) => {
+    try {
+      const session = await getCachedSession();
+      if (!session?.user?.id) {
+        throw new Error("No hay sesión activa");
+      }
+
+      setCurrentUserId(session.user.id);
+
+      // Obtener el libro
+      const book = await getBook(bookId);
+      if (!book) {
+        throw new Error("Libro no encontrado");
+      }
+
+      // Verificar que tiene archivo para subir
+      if (!book.fileBlob && !book.fileUrl) {
+        throw new Error("El libro no tiene archivo para subir");
+      }
+
+      set({ uploadingBookId: bookId });
+
+      console.log(book)
+
+      // Si tiene fileBlob, subirlo
+      if (book.fileBlob) {
+        const formData = new FormData();
+        formData.append("pdf", book.fileBlob);
+        formData.append("title", book.name);
+        formData.append("readingTimeSeconds", book.readingTimeSeconds.toString());
+        formData.append("scrollPosition", book.scrollPosition.toString());
+        formData.append("currentPage", (book.currentPage ?? 0).toString());
+
+        const cloudId = await uploadBook(formData);
+
+        // Actualizar el libro con el ID del cloud y marcar como sincronizado
+        const updatedBook: Book = {
+          ...book,
+          id: cloudId,
+          isSynced: true,
+        };
+
+        // IMPORTANTE: Eliminar el libro viejo de local y crear uno nuevo con el ID del cloud porque el ID cambió al subirlo
+        await deleteBookFromDB(book.id);
+        await saveBook(updatedBook);
+
+        set((state) => ({
+          books: state.books.map((b) =>
+            b.id === bookId ? updatedBook : b
+          ),
+          uploadingBookId: null,
+        }));
+      } else {
+        // Si solo tiene fileUrl (vino de la nube), simplemente marcar como sincronizado
+        const updatedBook: Book = {
+          ...book,
+          isSynced: true,
+        };
+
+        await saveBook(updatedBook);
+
+        set((state) => ({
+          books: state.books.map((b) =>
+            b.id === bookId ? updatedBook : b
+          ),
+          uploadingBookId: null,
+        }));
+      }
+    } catch (error) {
+      console.error("Error uploading book to cloud:", error);
+      set({ error: "Error al subir el libro a la nube", uploadingBookId: null });
+      throw error;
+    }
+  },
+
+  // Descargar un libro desde la nube manualmente
+  downloadBookFromCloud: async (bookId: string) => {
+    try {
+      const session = await getCachedSession();
+      if (!session?.user?.id) {
+        throw new Error("No hay sesión activa");
+      }
+
+      setCurrentUserId(session.user.id);
+
+      // Obtener el libro
+      const book = await getBook(bookId);
+      if (!book) {
+        throw new Error("Libro no encontrado");
+      }
+
+      if (!book.fileUrl) {
+        throw new Error("El libro no tiene URL en la nube");
+      }
+
+      set({ downloadingBookId: bookId, isProcessingPdf: true, pdfProgress: 0 });
+
+      // Descargar y procesar el PDF
+      const processedBook = await processBookForReading(book, (progress) => {
+        set({ pdfProgress: progress });
+      });
+
+      // Preservar el progreso de lectura existente
+      const bookWithProgress: Book = {
+        ...processedBook,
+        readingTimeSeconds: book.readingTimeSeconds,
+        scrollPosition: book.scrollPosition,
+        lastReadAt: book.lastReadAt,
+        isSynced: true, // Ya viene de la nube, así que está sincronizado
+      };
+
+      // Guardar en IndexedDB
+      await saveBook(bookWithProgress);
+
+      // Actualizar en la lista de libros
+      set((state) => ({
+        books: state.books.map((b) =>
+          b.id === bookId ? bookWithProgress : b
+        ),
+        downloadingBookId: "",
+        isProcessingPdf: false,
+        pdfProgress: 0,
+      }));
+    } catch (error) {
+      console.error("Error downloading book from cloud:", error);
+      set({
+        error: "Error al descargar el libro desde la nube",
+        downloadingBookId: "",
+        isProcessingPdf: false,
+        pdfProgress: 0
+      });
+      throw error;
+    }
+  },
+}));
