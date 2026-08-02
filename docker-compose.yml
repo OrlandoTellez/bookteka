@@ -8,7 +8,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bookteka"]
+      test: ["CMD-SHELL", "pg_isready -U bookteka -d bookteka_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -16,21 +16,22 @@ services:
       - "5433:5432"
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend-express
     environment:
       PORT: 3000
-      DATABASE_URL: ${DATABASE_URL}
-      FRONTEND_URL: ${FRONTEND_URL}
+      DATABASE_URL: postgresql://bookteka:bookteka123@db:5432/bookteka_db?schema=public
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8081}
       TRUST_BACKEND_ORIGINS: "true"
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
-      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
-      R2_ENDPOINT: ${R2_ENDPOINT}
-      R2_PUBLIC_DOMAIN: ${R2_PUBLIC_DOMAIN}
-      R2_BUCKET: ${R2_BUCKET}
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set in .env}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID must be set in .env}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY must be set in .env}
+      R2_ENDPOINT: ${R2_ENDPOINT:?R2_ENDPOINT must be set in .env}
+      R2_PUBLIC_DOMAIN: ${R2_PUBLIC_DOMAIN:?R2_PUBLIC_DOMAIN must be set in .env}
+      R2_BUCKET: ${R2_BUCKET:?R2_BUCKET must be set in .env}
+      RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY must be set in .env}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:?RESEND_FROM_EMAIL must be set in .env}
     ports:
       - "3001:3000"
     depends_on:
@@ -39,13 +40,14 @@ services:
 
   frontend:
     build:
-      context: ./web-app
+      context: ./frontend
       args:
         VITE_API_URL: /api
     ports:
       - "8081:8080"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
 
 volumes:
   pgdata:

@@ -24,8 +24,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
 
-# Migraciones de better-auth
-COPY better-auth_migrations ./better-auth_migrations
 
 # Entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/
