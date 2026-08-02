@@ -38,11 +38,14 @@ export function errorHandler(
     });
   }
 
-  // Errores de Multer (LIMIT_UNEXPECTED_FILE, LIMIT_FILE_SIZE, etc.) ->
-  // 400. multer.fields([...]) lanza MulterError cuando el cliente viola
-  // maxCount por fieldname o el fileSize; exponerlos como 400 evita que
-  // un fallo de validación de uploads suba como 500 y ensucie los logs.
   if (err instanceof multer.MulterError) {
+    // El exceso de tamaño tiene status canónico 413 (Request Entity Too Large)
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({
+        error: "El archivo excede el tamaño máximo permitido (20MB)",
+        code: err.code,
+      });
+    }
     return res.status(400).json({
       error: err.message,
       code: err.code,
