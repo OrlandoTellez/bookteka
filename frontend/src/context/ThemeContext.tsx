@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 export type ThemeName = "light" | "dark"
 
@@ -20,17 +20,12 @@ export interface ThemeInfo {
 const ThemeContext = createContext<ThemeContextType>({} as ThemeContextType);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<ThemeName>("light");
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-
-    if (savedTheme === "light" || savedTheme === "dark") {
-      setTheme(savedTheme);
-    } else {
-      setTheme("dark");
-    }
-  }, []);
+  // Inicialización síncrona desde localStorage para evitar el flash de tema
+  // (el tema correcto ya se aplica en el primer render).
+  const [theme, setTheme] = useState<ThemeName>(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme === "dark" ? "dark" : "light";
+  });
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";

@@ -1,14 +1,74 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri + React + Typescript</title>
-  </head>
+<html lang="es">
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <script>
+    (function () {
+      // Colores de splash por tema (--primary-color / --font-color-title de index.css)
+      var themes = {
+        light: ['#fcf5ee', '#38332e'],
+        dark: ['#1c1a16', '#ebe7e0'],
+        midnight: ['#000000', '#e5e5e5'],
+        sepia: ['#f4ecd8', '#3d3426'],
+        ocean: ['#e0f2fe', '#0c4a6e'],
+        forest: ['#ecfdf5', '#064e3b']
+      };
+      var theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      var colors = themes[theme] || themes.light;
+      document.documentElement.style.setProperty('--splash-bg', colors[0]);
+      document.documentElement.style.setProperty('--splash-fg', colors[1]);
+    })();
+  </script>
+  <style>
+    html,
+    body {
+      background-color: var(--splash-bg, #fcf5ee);
+      margin: 0;
+      padding: 0;
+    }
+
+    #splash-root {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--splash-bg, #fcf5ee);
+      color: var(--splash-fg, #38332e);
+      font-family: system-ui, sans-serif;
+      z-index: 9999;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .splash-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--splash-fg, #38332e);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Bookteka — Biblioteca personal</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/tauri.svg" />
+</head>
+
+<body>
+  <div id="root">
+    <div id="splash-root">
+      <div class="splash-spinner"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
