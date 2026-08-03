@@ -2,9 +2,7 @@ import type { StreakData } from "../schema";
 import { getDatabase } from "../connection";
 import { getCurrentUserId } from "../connection";
 
-import { API_BASE } from "@/lib/apiEnv";
-
-const API_URL = API_BASE;
+import { streakApi } from "@/api/streak";
 
 // Obtiene los datos de la racha del usuario actual
 export async function getStreakData(): Promise<StreakData | null> {
@@ -35,16 +33,7 @@ export async function syncStreakFromCloud(): Promise<StreakData | null> {
   if (!currentUserId) return null;
 
   try {
-    const response = await fetch(`${API_URL}/streak`, {
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      console.error("Error al obtener racha del servidor");
-      return null;
-    }
-
-    const data = await response.json();
+    const data = await streakApi.get();
 
     // Guardar en IndexedDB para caché local
     const streakData: StreakData = {
@@ -74,20 +63,7 @@ export async function completeDayInCloud(): Promise<{
   if (!currentUserId) return null;
 
   try {
-    const response = await fetch(`${API_URL}/streak/complete`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      console.error("Error al completar día en servidor");
-      return null;
-    }
-
-    const data = await response.json();
+    const data = await streakApi.complete();
 
     // Actualizar también en IndexedDB
     const streakData: StreakData = {
@@ -115,23 +91,7 @@ export async function initializeStreakInCloud(
   if (!currentUserId) return null;
 
   try {
-    const response = await fetch(`${API_URL}/streak/initialize`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        startDate,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("Error al inicializar racha en servidor");
-      return null;
-    }
-
-    const data = await response.json();
+    const data = await streakApi.initialize(startDate);
 
     // Actualizar también en IndexedDB
     const streakData: StreakData = {

@@ -4,9 +4,7 @@ import type { Book } from "@/types/book";
 // Configurar el worker de pdf.js desde la carpeta public
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
-import { API_BASE } from "@/lib/apiEnv";
-
-const API_URL = API_BASE;
+import { booksApi } from "@/api/book";
 
 export async function downloadAndExtractPdfText(
   bookId: string,
@@ -15,9 +13,7 @@ export async function downloadAndExtractPdfText(
   try {
     onProgress?.(10);
 
-    const response = await fetch(`${API_URL}/books/${bookId}/stream`, {
-      credentials: "include",
-    });
+    const response = await booksApi.stream(bookId);
 
     if (!response.ok) {
       throw new Error("Error al descargar el PDF");
@@ -73,16 +69,8 @@ export async function downloadPdfToBlob(fileUrl: string): Promise<Blob> {
 
 // Obtiene una URL firmado para descargar el PDF (si el backend lo requiere)
 export async function getSignedDownloadUrl(bookId: string): Promise<string> {
-  const response = await fetch(`${API_URL}/books/${bookId}/download`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Error al obtener URL de descarga");
-  }
-
-  const data = await response.json();
-  return data.url;
+  const { url } = await booksApi.download(bookId);
+  return url;
 }
 
 // Procesa un libro: descarga el PDF si es necesario y extrae el texto

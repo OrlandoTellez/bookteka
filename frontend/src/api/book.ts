@@ -1,103 +1,85 @@
-import { API_BASE } from "@/lib/apiEnv";
+import { api, type RequestOptions } from "./client";
 
-const API_URL = API_BASE;
-
-export const uploadBook = async (formData: FormData) => {
-  try {
-    const response = await fetch(`${API_URL}/books/upload`, {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error("Error al subir el libro al servidor");
-    }
-
-    const data = await response.json();
-
-    const id = data.bookId || data.id
-
-    return id
-  } catch {
-    console.error("Error al subir el libro")
-    throw new Error("UPLOAD_FAILED");
-  }
+export interface CloudBook {
+  id: string;
+  name: string;
+  author: string;
+  createdAt: number;
+  lastReadAt: number;
+  readingTimeSeconds: number;
+  scrollPosition: number;
+  currentPage: number;
+  fileUrl: string | null;
+  fileKey: string | null;
+  isSynced: boolean;
 }
 
-export const downloadBook = async (bookId: string) => {
-  try {
-    const response = await fetch(
-      `${API_URL}/books/${bookId}/download`,
-      {
-        credentials: "include"
-      }
-    );
-
-    if (!response.ok) throw new Error("No se pudo obtener el enlace");
-
-    const { url } = await response.json();
-
-    return url
-  } catch {
-    console.error("Error al descargar el libro")
-    throw new Error("DOWNLOAD_FAILED");
-
-  }
+export interface UploadBookResponse {
+  bookId: string;
+  userBookId: string;
 }
 
-export const deleteBookInCloud = async (bookId: string) => {
-  try {
-    const response = await fetch(`${API_URL}/books/${bookId}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Error al eliminar el libro del servidor");
-    }
-  } catch {
-    console.error("Error al eliminar el libro")
-    throw new Error("DELETE_FAILED");
-  }
+export interface DownloadBookResponse {
+  url: string;
 }
 
-export interface UpdateBookProgressOptions {
-  /**
-   * Si es `true`, la request usa `keepalive: true` en `fetch` para que el
-   * navegador la mantenga viva unos segundos luego de que la pestaña se
-   * cierre. Util en `pagehide`/`beforeunload` cuando queremos garantizar
-   * que la última posición de scroll persiste aunque el usuario cierre la
-   * ventana sin dar tiempo al `await`.
-   */
-  keepalive?: boolean;
+export interface DeleteBookResponse {
+  success: boolean;
+  message: string;
+  auditId: string;
 }
 
-export const updateBookProgress = async (
+export interface UpdateProgressData {
+  readingTimeSeconds?: number;
+  scrollPosition?: number;
+  currentPage?: number;
+  lastReadAt?: number;
+}
+
+export interface UpdateProgressResponse {
+  success: boolean;
+  readingTimeSeconds: number;
+  scrollPosition: number;
+  currentPage: number;
+  lastReadAt?: Date | null;
+}
+
+export const booksApi = {
+  list: () => api.get<CloudBook[]>("/books"),
+
+  upload: (formData: FormData) =>
+    api.post<UploadBookResponse>("/books/upload", formData),
+
+  download: (bookId: string) =>
+    api.get<DownloadBookResponse>(`/books/${bookId}/download`),
+
+  stream: (bookId: string) => api.raw(`/books/${bookId}/stream`),
+
+  updateProgress: (
+    bookId: string,
+    data: UpdateProgressData,
+    options?: RequestOptions,
+  ) =>
+    api.patch<UpdateProgressResponse>(`/books/${bookId}/progress`, data, options),
+
+  remove: (bookId: string) => api.delete<DeleteBookResponse>(`/books/${bookId}`),
+};
+
+
+export const uploadBook = async (formData: FormData): Promise<string> => {
+  const data = await booksApi.upload(formData);
+  return data.bookId || (data as UploadBookResponse & { id?: string }).id || "";
+};
+
+export const downloadBook = async (bookId: string): Promise<string> => {
+  const { url } = await booksApi.download(bookId);
+  return url;
+};
+
+export const deleteBookInCloud = (bookId: string) => booksApi.remove(bookId);
+
+export const updateBookProgress = (
   bookId: string,
-  data: {
-    readingTimeSeconds?: number;
-    scrollPosition?: number;
-    currentPage?: number;
-    lastReadAt?: number;
-  },
-  options: UpdateBookProgressOptions = {},
-) => {
-  try {
-    const response = await fetch(`${API_URL}/books/${bookId}/progress`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-      credentials: "include",
-      keepalive: options.keepalive ?? false,
-    });
-    if (!response.ok) {
-      throw new Error("Error al actualizar el progreso");
-    }
-    return await response.json();
-  } catch {
-    console.error("Error al actualizar el progreso en el servidor");
-    throw new Error("UPDATE_PROGRESS_FAILED");
-  }
-}
+  data: UpdateProgressData,
+  options?: RequestOptions,
+) => booksApi.updateProgress(bookId, data, options);

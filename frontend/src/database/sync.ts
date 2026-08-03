@@ -2,9 +2,7 @@ import type { Book } from "@/types/book";
 import { getDatabase } from "./connection";
 import { getCurrentUserId } from "./connection";
 
-import { API_BASE } from "@/lib/apiEnv";
-
-const API_URL = API_BASE;
+import { booksApi } from "@/api/book";
 
 // Descarga todos los libros del usuario desde el backend y los guarda en IndexedDB
 // IMPORTANTE: Hace merge de datos para preservar progreso local (tiempo de lectura, posición, contenido)
@@ -12,16 +10,7 @@ export async function syncBooksFromCloud(): Promise<Book[]> {
   const currentUserId = getCurrentUserId();
   if (!currentUserId) throw new Error("No hay usuario autenticado");
 
-  const response = await fetch(`${API_URL}/books`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => "sin cuerpo");
-    throw new Error(`Error al obtener libros del servidor: ${response.status} ${response.statusText} — ${body}`);
-  }
-
-  const cloudBooks: Book[] = await response.json();
+  const cloudBooks = await booksApi.list();
 
   const db = await getDatabase();
 
@@ -42,13 +31,16 @@ export async function syncBooksFromCloud(): Promise<Book[]> {
     const mergedBook: Book & { userId: string } = {
       ...cloudBook,
       userId: currentUserId,
+      // El cloud devuelve null; el tipo local espera undefined.
+      fileUrl: cloudBook.fileUrl ?? undefined,
+      fileKey: cloudBook.fileKey ?? undefined,
       // Siempre tomar el mayor para no perder progreso
       readingTimeSeconds: Math.max(localTime, cloudTime),
       scrollPosition: Math.max(localScroll, cloudScroll),
       currentPage: Math.max(localPage, cloudPage),
       lastReadAt: Math.max(localLastRead, cloudLastRead) || Date.now(),
       // Preservar el contenido del PDF si existe localmente
-      text: localBook?.text || cloudBook.text || "",
+      text: localBook?.text || "",
       // Preservar fileBlob si existe (no viene del servidor)
       fileBlob: localBook?.fileBlob,
       // Marcar como sincronizado ya que viene de la nube
@@ -59,5 +51,5 @@ export async function syncBooksFromCloud(): Promise<Book[]> {
   }
 
   console.log(`Sincronizados ${cloudBooks.length} libros desde la nube (con merge de progreso local)`);
-  return cloudBooks;
+  return cloudBooks as unknown as Book[];
 }

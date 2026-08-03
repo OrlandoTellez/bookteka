@@ -1,6 +1,4 @@
-import { API_BASE } from "@/lib/apiEnv";
-
-const API_URL = API_BASE;
+import { api } from "./client";
 
 export interface CreateBookmarkPayload {
   name: string;
@@ -18,77 +16,40 @@ export interface BookmarkResponse {
   createdAt: string;
 }
 
-export const createBookmark = async (
+export const bookmarksApi = {
+  list: (bookId: string) =>
+    api.get<BookmarkResponse[]>(`/books/${bookId}/bookmarks`),
+
+  create: (bookId: string, data: CreateBookmarkPayload) =>
+    api.post<BookmarkResponse>(`/books/${bookId}/bookmarks`, data),
+
+  remove: (bookId: string, bookmarkId: string) =>
+    api.delete<{ message?: string }>(`/books/${bookId}/bookmarks/${bookmarkId}`),
+
+  update: (
+    bookId: string,
+    bookmarkId: string,
+    data: Partial<CreateBookmarkPayload>,
+  ) =>
+    api.patch<BookmarkResponse>(
+      `/books/${bookId}/bookmarks/${bookmarkId}`,
+      data,
+    ),
+};
+
+
+export const createBookmark = (
   bookId: string,
   data: CreateBookmarkPayload,
-): Promise<BookmarkResponse> => {
-  const response = await fetch(`${API_URL}/books/${bookId}/bookmarks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    credentials: "include",
-  });
+) => bookmarksApi.create(bookId, data);
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || "Error al crear marcador");
-  }
+export const getBookmarks = (bookId: string) => bookmarksApi.list(bookId);
 
-  return response.json();
-};
+export const deleteBookmark = (bookId: string, bookmarkId: string) =>
+  bookmarksApi.remove(bookId, bookmarkId);
 
-export const getBookmarks = async (
-  bookId: string,
-): Promise<BookmarkResponse[]> => {
-  const response = await fetch(`${API_URL}/books/${bookId}/bookmarks`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || "Error al obtener marcadores");
-  }
-
-  return response.json();
-};
-
-export const deleteBookmark = async (
-  bookId: string,
-  bookmarkId: string,
-): Promise<void> => {
-  const response = await fetch(
-    `${API_URL}/books/${bookId}/bookmarks/${bookmarkId}`,
-    {
-      method: "DELETE",
-      credentials: "include",
-    },
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || "Error al eliminar marcador");
-  }
-};
-
-export const updateBookmark = async (
+export const updateBookmark = (
   bookId: string,
   bookmarkId: string,
   data: Partial<CreateBookmarkPayload>,
-): Promise<BookmarkResponse> => {
-  const response = await fetch(
-    `${API_URL}/books/${bookId}/bookmarks/${bookmarkId}`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-      credentials: "include",
-    },
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || "Error al actualizar marcador");
-  }
-
-  return response.json();
-};
+) => bookmarksApi.update(bookId, bookmarkId, data);
