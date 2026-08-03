@@ -10,7 +10,7 @@ export interface AuthUser {
   email_verified: boolean;
   phone: string | null;
   image: string | null;
-  role: "admin" | "cajero";
+  role: "user" | "admin";
   created_at: string;
   updated_at: string;
 }

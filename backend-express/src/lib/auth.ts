@@ -247,7 +247,7 @@ async function register(
       data: {
         name: data.name,
         email,
-        role: "cajero",
+        role: "user",
         email_verified: false,
       },
     });

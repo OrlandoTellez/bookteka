@@ -10,7 +10,6 @@ generator client {
 enum ROLE {
   user
   admin
-  cajero
 }
 
 model user {
@@ -20,7 +19,7 @@ model user {
   email_verified Boolean @default(false)
   phone          String?
   image          String?
-  role           ROLE    @default(cajero)
+  role           ROLE    @default(user)
 
   created_at DateTime  @default(now()) @db.Timestamptz
   updated_at DateTime  @updatedAt @db.Timestamptz
