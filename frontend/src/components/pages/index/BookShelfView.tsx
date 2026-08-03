@@ -2,12 +2,17 @@ import { useMemo, useState } from "react";
 import { Clock, BookOpen, Trash2 } from "lucide-react";
 import styles from "./BookShelfView.module.css";
 import type { Book } from "@/database";
+import { OpenBookModal } from "@/components/modals/OpenBookModal";
+import { DeleteModal } from "@/components/modals/DeleteModal";
 
 
 interface BookShelfViewProps {
   books: Book[];
   onOpen: (book: Book) => Promise<void>;
   onDelete: (id: string) => void;
+  isProcessingPdf?: boolean;
+  downloadingBookId?: string;
+  pdfProgress?: number;
 }
 
 const BOOK_COLORS = [
@@ -58,18 +63,29 @@ const ShelfBook = ({
   book,
   onOpen,
   onDelete,
+  isProcessingPdf,
+  downloadingBookId,
+  pdfProgress,
 }: {
   book: Book;
-  onOpen: (book: Book) => void;
+  onOpen: (book: Book) => Promise<void>;
   onDelete: (id: string) => void;
+  isProcessingPdf?: boolean;
+  downloadingBookId?: string;
+  pdfProgress?: number;
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [bookModalOpen, setBookModalOpen] = useState(false);
 
   const color = getBookColor(book.name);
   const thickness = getBookThickness(book.name);
   const height = getBookHeight(book.name);
   const isReading = book.scrollPosition > 0;
+  const isDownloading = isProcessingPdf && downloadingBookId === book.id;
   const title = truncateTitle(book.name, 24);
+  const progress = book.totalPages
+    ? Math.min(100, Math.round(((book.currentPage ?? 0) / book.totalPages) * 100))
+    : 0;
 
   return (
     <div
@@ -77,7 +93,7 @@ const ShelfBook = ({
       style={{ width: thickness, height }}
     >
       <button
-        onClick={() => onOpen(book)}
+        onClick={() => setBookModalOpen(true)}
         className={styles.bookButton}
       >
         <div
@@ -101,55 +117,100 @@ const ShelfBook = ({
 
       {/* Tooltip */}
       <div className={styles.tooltip}>
-        <p className={styles.tooltipTitle}>
-          {book.name.replace(/\.pdf$/i, "")}
-        </p>
+        <div
+          className={styles.tooltipAccent}
+          style={{
+            background: `linear-gradient(90deg, ${color.spine}, ${color.cover})`,
+          }}
+        />
 
-        <div className={styles.tooltipInfo}>
-          <div><Clock size={12} /> {formatTime(book.readingTimeSeconds)}</div>
-          <div><BookOpen size={12} /> {isReading ? "En progreso" : "Sin empezar"}</div>
-        </div>
+        <div className={styles.tooltipBody}>
+          <p className={styles.tooltipTitle}>
+            {book.name.replace(/\.pdf$/i, "")}
+          </p>
 
-        <div className={styles.tooltipActions}>
-          <span>Abrir</span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirmOpen(true);
-            }}
+          <span
+            className={`${styles.statusBadge} ${isReading ? styles.statusReading : styles.statusNew}`}
           >
-            <Trash2 size={14} />
-          </button>
+            {isReading ? "En progreso" : "Sin empezar"}
+          </span>
+
+          <div className={styles.tooltipInfo}>
+            <div><Clock size={12} /> {formatTime(book.readingTimeSeconds)}</div>
+            {book.totalPages ? (
+              <div><BookOpen size={12} /> {book.totalPages} pág.</div>
+            ) : null}
+          </div>
+
+          {book.totalPages ? (
+            <div className={styles.tooltipProgress}>
+              <div
+                className={styles.tooltipProgressFill}
+                style={{ width: `${progress}%`, background: color.cover }}
+              />
+            </div>
+          ) : null}
+
+          <div className={styles.tooltipActions}>
+            <span className={styles.tooltipOpenLabel}>
+              <BookOpen size={12} />
+              Ver libro
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmOpen(true);
+              }}
+              disabled={isDownloading}
+              title={isDownloading ? "Espera a que termine la descarga" : undefined}
+              aria-label="Eliminar libro"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Modal */}
-      {confirmOpen && (
-        <div className={styles.modalOverlay} onClick={() => setConfirmOpen(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3>¿Eliminar libro?</h3>
-            <p>{book.name}</p>
+      {/* Modal de libro abierto */}
+      {bookModalOpen && (
+        <OpenBookModal
+          book={book}
+          color={color}
+          onClose={() => setBookModalOpen(false)}
+          onRead={() => {
+            // El modal se mantiene abierto mientras el libro se descarga
+            // de la nube (el botón muestra el progreso) y se cierra al
+            // terminar, cuando la vista cambia al lector.
+            void (async () => {
+              await onOpen(book);
+              setBookModalOpen(false);
+            })();
+          }}
+          isDownloading={isDownloading}
+          downloadProgress={isDownloading ? pdfProgress : undefined}
+        />
+      )}
 
-            <div className={styles.modalActions}>
-              <button onClick={() => setConfirmOpen(false)}>Cancelar</button>
-              <button
-                className={styles.deleteBtn}
-                onClick={() => {
-                  onDelete(book.id);
-                  setConfirmOpen(false);
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Modal de confirmación de borrado (mismo componente que grid y lista) */}
+      {confirmOpen && (
+        <DeleteModal
+          book={book}
+          onClose={() => setConfirmOpen(false)}
+          onDelete={onDelete}
+        />
       )}
     </div>
   );
 };
 
-const BookShelfView = ({ books, onOpen, onDelete }: BookShelfViewProps) => {
+const BookShelfView = ({
+  books,
+  onOpen,
+  onDelete,
+  isProcessingPdf,
+  downloadingBookId,
+  pdfProgress,
+}: BookShelfViewProps) => {
   const shelves = useMemo(() => {
     const result: Book[][] = [];
     const perShelf = Math.max(5, Math.min(10, Math.ceil(books.length / Math.ceil(books.length / 8))));
@@ -171,6 +232,9 @@ const BookShelfView = ({ books, onOpen, onDelete }: BookShelfViewProps) => {
                 book={book}
                 onOpen={onOpen}
                 onDelete={onDelete}
+                isProcessingPdf={isProcessingPdf}
+                downloadingBookId={downloadingBookId}
+                pdfProgress={pdfProgress}
               />
             ))}
           </div>

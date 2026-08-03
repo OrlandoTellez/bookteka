@@ -198,6 +198,9 @@ export const Library = () => {
           books={booksToRender}
           onOpen={handleOpenBook}
           onDelete={handleDelete}
+          isProcessingPdf={isProcessingPdf}
+          downloadingBookId={downloadingBookId}
+          pdfProgress={pdfProgress}
         />
       );
     }
