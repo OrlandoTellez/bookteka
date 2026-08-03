@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ReadingSettings } from "@/types/reading";
+import type { LibraryView, ReadingSettings } from "@/types/reading";
 
 const DEFAULT_READING_SETTINGS: ReadingSettings = {
   fontSize: 18,
@@ -12,9 +12,11 @@ const DEFAULT_READING_SETTINGS: ReadingSettings = {
 interface UserPreferences {
   cloudSyncEnabled: boolean;
   defaultReadingSettings: ReadingSettings;
+  defaultView: LibraryView;
   setCloudSyncEnabled: (enabled: boolean) => void;
   setDefaultReadingSettings: (settings: ReadingSettings) => void;
   resetReadingSettings: () => void;
+  setDefaultView: (view: LibraryView) => void;
 }
 
 export const useUserPreferences = create<UserPreferences>()(
@@ -22,6 +24,7 @@ export const useUserPreferences = create<UserPreferences>()(
     (set) => ({
       cloudSyncEnabled: false,
       defaultReadingSettings: DEFAULT_READING_SETTINGS,
+      defaultView: "shelf",
 
       setCloudSyncEnabled: (enabled: boolean) => {
         set({ cloudSyncEnabled: enabled });
@@ -29,6 +32,10 @@ export const useUserPreferences = create<UserPreferences>()(
 
       setDefaultReadingSettings: (settings: ReadingSettings) => {
         set({ defaultReadingSettings: settings });
+      },
+
+      setDefaultView: (view: LibraryView) => {
+        set({ defaultView: view });
       },
 
       resetReadingSettings: () => {

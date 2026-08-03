@@ -5,7 +5,7 @@ import { useBookStore } from "@/store/bookStore";
 import type { Book } from "@/types/book";
 import { useStreakStore } from "@/store/streakStore";
 import { useUserPreferences } from "@/store/userPreferencesStore";
-import type { ReadingSettings } from "@/types/reading";
+import type { ReadingSettings, LibraryView } from "@/types/reading";
 
 const Profile = () => {
   const { books, setReadingTime, uploadBookToCloud, uploadingBookId } = useBookStore();
@@ -20,6 +20,8 @@ const Profile = () => {
     defaultReadingSettings,
     setDefaultReadingSettings,
     resetReadingSettings,
+    defaultView,
+    setDefaultView,
   } = useUserPreferences();
   const [editingBook, setEditingBook] = useState<Book | null>(null);
 
@@ -48,6 +50,10 @@ const Profile = () => {
     resetReadingSettings();
   };
 
+  const handleDefaultViewChange = (view: LibraryView) => {
+    setDefaultView(view);
+  };
+
   return (
     <>
       <UserProfile
@@ -62,6 +68,8 @@ const Profile = () => {
         readingSettings={defaultReadingSettings}
         onReadingSettingsChange={handleReadingSettingsChange}
         onReadingSettingsReset={handleReadingSettingsReset}
+        defaultView={defaultView}
+        onDefaultViewChange={handleDefaultViewChange}
       />
       {editingBook && (
         <EditTimeModal

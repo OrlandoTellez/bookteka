@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { formatTime } from "@/utils/time";
 import type { Book } from "@/types/book";
-import type { ReadingSettings, StreakData } from "@/types/reading";
+import type { ReadingSettings, StreakData, LibraryView } from "@/types/reading";
 import styles from "./UserProfile.module.css";
 import { Link } from "react-router-dom";
 import { StatCard } from "./StatCard";
@@ -20,6 +20,7 @@ import { StreakCard } from "./StreakCard";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { CardProfile } from "./CardProfile";
 import { ReadingSettingsCard } from "./ReadingSettingsCard";
+import { DefaultViewCard } from "./DefaultViewCard";
 import { downloadBook } from "@/api/book";
 import { CloudSyncToggle } from "@/components/common/CloudSyncToggle";
 import { Spinner } from "@/components/common/Spinner";
@@ -36,6 +37,8 @@ interface UserProfileProps {
   readingSettings?: ReadingSettings;
   onReadingSettingsChange?: (settings: ReadingSettings) => void;
   onReadingSettingsReset?: () => void;
+  defaultView?: LibraryView;
+  onDefaultViewChange?: (view: LibraryView) => void;
 }
 
 const UserProfile = ({
@@ -50,6 +53,8 @@ const UserProfile = ({
   readingSettings,
   onReadingSettingsChange,
   onReadingSettingsReset,
+  defaultView,
+  onDefaultViewChange,
 }: UserProfileProps) => {
   const totalBooks = books.length;
   const totalReadingTime = books.reduce(
@@ -148,6 +153,10 @@ const UserProfile = ({
         />
 
         <CardProfile />
+
+        {defaultView && onDefaultViewChange && (
+          <DefaultViewCard view={defaultView} onChange={onDefaultViewChange} />
+        )}
 
         {readingSettings && onReadingSettingsChange && onReadingSettingsReset && (
           <ReadingSettingsCard

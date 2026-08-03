@@ -3,6 +3,8 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { CardBook } from "./CardBook";
 import { useBookStore } from "@/store/bookStore";
+import { useUserPreferences } from "@/store/userPreferencesStore";
+import type { LibraryView } from "@/types/reading";
 import styles from "./Library.module.css";
 import {
   Book as BookIcon,
@@ -29,8 +31,25 @@ export const Library = () => {
   const [sortBy, setSortBy] = useState<SortBy>("recent");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "shelf">("grid");
+  const [viewMode, setViewMode] = useState<LibraryView>(useUserPreferences.getState().defaultView);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const { defaultView, setDefaultView } = useUserPreferences();
+
+  const [isManualView, setIsManualView] = useState(false);
+
+  useEffect(() => {
+    if (!isManualView) setViewMode(defaultView);
+  }, [defaultView, isManualView]);
+
+  const handleViewModeChange = useCallback(
+    (view: LibraryView) => {
+      setViewMode(view);
+      setIsManualView(true);
+      setDefaultView(view);
+    },
+    [setDefaultView],
+  );
 
   const {
     books,
@@ -210,9 +229,18 @@ export const Library = () => {
 
           <div className={styles.viewToggle}>
             <button
+              className={`${styles.viewButton} ${styles.viewButtonLast} ${viewMode === "shelf" ? styles.active : ""
+                }`}
+              onClick={() => handleViewModeChange("shelf")}
+              aria-label="Vista estante"
+            >
+              <BookIcon width={16} />
+            </button>
+
+            <button
               className={`${styles.viewButton} ${styles.viewButtonFirst} ${viewMode === "grid" ? styles.active : ""
                 }`}
-              onClick={() => setViewMode("grid")}
+              onClick={() => handleViewModeChange("grid")}
               aria-label="Vista grid"
             >
               <Grid width={16} />
@@ -220,18 +248,10 @@ export const Library = () => {
             <button
               className={`${styles.viewButton} ${styles.viewButtonMiddle} ${viewMode === "list" ? styles.active : ""
                 }`}
-              onClick={() => setViewMode("list")}
+              onClick={() => handleViewModeChange("list")}
               aria-label="Vista lista"
             >
               <Menu width={16} />
-            </button>
-            <button
-              className={`${styles.viewButton} ${styles.viewButtonLast} ${viewMode === "shelf" ? styles.active : ""
-                }`}
-              onClick={() => setViewMode("shelf")}
-              aria-label="Vista estante"
-            >
-              <BookIcon width={16} />
             </button>
           </div>
         </div>

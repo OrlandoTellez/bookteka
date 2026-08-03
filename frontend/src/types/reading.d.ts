@@ -5,6 +5,8 @@ export interface ReadingSession {
   isActive: boolean;
 }
 
+export type LibraryView = "grid" | "list" | "shelf";
+
 export interface ReadingSettings {
   fontSize: number;
   fontFamily: string;
