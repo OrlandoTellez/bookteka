@@ -123,3 +123,10 @@ button {
   border-radius: 5px;
   cursor: pointer;
 }
+
+/* Spinner del splash (AppBootstrap) */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
