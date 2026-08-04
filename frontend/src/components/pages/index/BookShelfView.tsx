@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Clock, BookOpen, Trash2 } from "lucide-react";
 import styles from "./BookShelfView.module.css";
 import type { Book } from "@/database";
@@ -68,6 +77,7 @@ const ShelfBook = ({
   downloadingBookId,
   pdfProgress,
   isDragging,
+  dragActive,
   onDragStart,
   onDragEnd,
   onDragEnter,
@@ -80,6 +90,7 @@ const ShelfBook = ({
   downloadingBookId?: string;
   pdfProgress?: number;
   isDragging: boolean;
+  dragActive: boolean;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   onDragEnter: (id: string) => void;
@@ -87,6 +98,26 @@ const ShelfBook = ({
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bookModalOpen, setBookModalOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  // Al abrir el modal (click), limpiar el tooltip para que no se quede
+  // pegado al cerrar el modal (el mouseLeave nunca se dispara porque
+  // el modal se interpone).
+  const openBookModal = useCallback(() => {
+    setHovered(false);
+    setTipPos(null);
+    setBookModalOpen(true);
+  }, []);
+  const [tipPos, setTipPos] = useState<{
+    top: number;
+    left: number;
+    translateY: string;
+    below: boolean;
+    arrowLeft: number;
+  } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const tipRef = useRef<HTMLDivElement | null>(null);
+  const hideTimerRef = useRef<number | null>(null);
 
   const color = getBookColor(book.name);
   const thickness = getBookThickness(book.name);
@@ -98,10 +129,87 @@ const ShelfBook = ({
     ? Math.min(100, Math.round(((book.currentPage ?? 0) / book.totalPages) * 100))
     : 0;
 
+  // El tooltip vive en un portal sobre <body> (position: fixed) para que el
+  // overflow-x: hidden del contenedor no lo recorte ni genere scroll horizontal.
+  const updateTip = useCallback(() => {
+    const btn = buttonRef.current;
+    const el = tipRef.current;
+    if (!btn || !el) return;
+    const rect = btn.getBoundingClientRect();
+    const w = el.offsetWidth || (window.innerWidth <= 480 ? 200 : 236);
+    const h = el.offsetHeight;
+    const gap = 14;
+    const margin = 8;
+    // Si no cabe arriba (libro cerca del borde superior), se muestra debajo
+    const below = rect.top - gap - h < margin;
+    const top = below ? rect.bottom + gap : rect.top - gap;
+    let left = rect.left + rect.width / 2 - w / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - w - margin));
+    let arrowLeft = rect.left + rect.width / 2 - left;
+    arrowLeft = Math.max(14, Math.min(arrowLeft, w - 14));
+    setTipPos({ top, left, translateY: below ? "0%" : "-100%", below, arrowLeft });
+  }, []);
+
+  const showTooltip = useCallback(() => {
+    if (hideTimerRef.current) {
+      window.clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    const btn = buttonRef.current;
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      const w = window.innerWidth <= 480 ? 200 : 236;
+      const gap = 14;
+      const margin = 8;
+      const h = 280; // altura estimada para el cálculo provisional; updateTip la refina
+      const below = rect.top - gap - h < margin;
+      const top = below ? rect.bottom + gap : rect.top - gap;
+      let left = Math.max(margin, Math.min(rect.left + rect.width / 2 - w / 2, window.innerWidth - w - margin));
+      let arrowLeft = rect.left + rect.width / 2 - left;
+      arrowLeft = Math.max(14, Math.min(arrowLeft, w - 14));
+      // Posición provisional para montar el portal; updateTip la refina al medir
+      setTipPos({ top, left, translateY: below ? "0%" : "-100%", below, arrowLeft });
+    }
+    setHovered(true);
+  }, []);
+
+  const scheduleHide = useCallback(() => {
+    if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = window.setTimeout(() => setHovered(false), 140);
+  }, []);
+
+  // Refinar la posición real (alto medido) justo después de montar el tooltip
+  useLayoutEffect(() => {
+    if (hovered) updateTip();
+  }, [hovered, updateTip]);
+
+  // Seguir al libro si la página hace scroll o cambia de tamaño
+  useEffect(() => {
+    if (!hovered) return;
+    const onMove = () => updateTip();
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [hovered, updateTip]);
+
+  useEffect(
+    () => () => {
+      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    },
+    [],
+  );
+
+  const showTip = hovered && !dragActive;
+
   return (
     <div
       className={`${styles.bookWrapper} ${isDragging ? styles.dragging : ""}`}
       style={{ width: thickness, height }}
+      onMouseEnter={showTooltip}
+      onMouseLeave={scheduleHide}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
@@ -119,8 +227,9 @@ const ShelfBook = ({
       }}
     >
       <button
-        onClick={() => setBookModalOpen(true)}
+        onClick={openBookModal}
         className={styles.bookButton}
+        ref={buttonRef}
       >
         <div
           className={styles.book}
@@ -141,61 +250,80 @@ const ShelfBook = ({
         </div>
       </button>
 
-      {/* Tooltip */}
-      <div className={styles.tooltip}>
-        <div
-          className={styles.tooltipAccent}
-          style={{
-            background: `linear-gradient(90deg, ${color.spine}, ${color.cover})`,
-          }}
-        />
-
-        <div className={styles.tooltipBody}>
-          <p className={styles.tooltipTitle}>
-            {book.name.replace(/\.pdf$/i, "")}
-          </p>
-
-          <span
-            className={`${styles.statusBadge} ${isReading ? styles.statusReading : styles.statusNew}`}
+      {/* Tooltip: portal a <body> con position: fixed (no lo recorta el overflow del contenedor) */}
+      {showTip &&
+        tipPos &&
+        createPortal(
+          <div
+            ref={tipRef}
+            className={`${styles.tooltip} ${tipPos.below ? styles.tooltipBelow : ""}`}
+            style={
+              {
+                top: tipPos.top,
+                left: tipPos.left,
+                transform: `translateY(${tipPos.translateY})`,
+                "--arrow-left": `${tipPos.arrowLeft}px`,
+              } as CSSProperties
+            }
+            onMouseEnter={showTooltip}
+            onMouseLeave={scheduleHide}
           >
-            {isReading ? "En progreso" : "Sin empezar"}
-          </span>
+            <div
+              className={styles.tooltipAccent}
+              style={{
+                background: `linear-gr1dient(90deg, ${color.spine}, ${color.cover})`,
+              }}
+            />
 
-          <div className={styles.tooltipInfo}>
-            <div><Clock size={12} /> {formatTime(book.readingTimeSeconds)}</div>
-            {book.totalPages ? (
-              <div><BookOpen size={12} /> {book.totalPages} pág.</div>
-            ) : null}
-          </div>
+            <div className={styles.tooltipBody}>
+              <p className={styles.tooltipTitle}>
+                {book.name.replace(/\.pdf$/i, "")}
+              </p>
 
-          {book.totalPages ? (
-            <div className={styles.tooltipProgress}>
-              <div
-                className={styles.tooltipProgressFill}
-                style={{ width: `${progress}%`, background: color.cover }}
-              />
-            </div>
-          ) : null}
+              <span
+                className={`${styles.statusBadge} ${isReading ? styles.statusReading : styles.statusNew}`}
+              >
+                {isReading ? "En progreso" : "Sin empezar"}
+              </span>
 
-          <div className={styles.tooltipActions}>
-            <span className={styles.tooltipOpenLabel}>
+              <div className={styles.tooltipInfo}>
+                <div><Clock size={12} /> {formatTime(book.readingTimeSeconds)}</div>
+                {book.totalPages ? (
+                  <div><BookOpen size={12} /> {book.totalPages} pág.</div>
+                ) : null}
+              </div>
+
+              {book.totalPages ? (
+                <div className={styles.tooltipProgress}>
+                  <div
+                    className={styles.tooltipProgressFill}
+                    style={{ width: `${progress}%`, background: color.cover }}
+                  />
+                </div>
+              ) : null}
+
+              <div className={styles.tooltipActions}>
+                <span className={styles.tooltipOpenLabel}>
               <BookOpen size={12} />
               Ver libro
             </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                setHovered(false);
                 setConfirmOpen(true);
               }}
-              disabled={isDownloading}
-              title={isDownloading ? "Espera a que termine la descarga" : undefined}
-              aria-label="Eliminar libro"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </div>
-      </div>
+                  disabled={isDownloading}
+                  title={isDownloading ? "Espera a que termine la descarga" : undefined}
+                  aria-label="Eliminar libro"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* Modal de libro abierto */}
       {bookModalOpen && (
@@ -240,6 +368,7 @@ const BookShelfView = ({
 }: BookShelfViewProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const dragActive = dragId !== null;
 
   const [localBooks, setLocalBooks] = useState<Book[]>(books);
   const localBooksRef = useRef<Book[]>(books);
@@ -350,6 +479,7 @@ const BookShelfView = ({
                 downloadingBookId={downloadingBookId}
                 pdfProgress={pdfProgress}
                 isDragging={dragId === book.id}
+                dragActive={dragActive}
                 onDragStart={setDragId}
                 onDragEnd={() => setDragId(null)}
                 onDragEnter={(id) => {
