@@ -2,9 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 9500;
-  background: rgba(15, 12, 10, 0.62);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,13 +82,11 @@
 .pageRight {
   right: 0;
   background:
-    repeating-linear-gradient(
-      to bottom,
+    repeating-linear-gradient(to bottom,
       transparent 0px,
       transparent 34px,
       rgba(120, 100, 80, 0.12) 34px,
-      rgba(120, 100, 80, 0.12) 35px
-    ),
+      rgba(120, 100, 80, 0.12) 35px),
     linear-gradient(to bottom, #fffdf6, #f7f1e3);
   border-radius: 3px 6px 6px 3px;
   box-shadow:
@@ -156,7 +152,7 @@
   min-width: 0;
 }
 
-.metaItem > svg {
+.metaItem>svg {
   color: #9a6b2f;
   flex-shrink: 0;
 }
@@ -253,8 +249,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   transition:
     background-color 0.15s,
     transform 0.15s;

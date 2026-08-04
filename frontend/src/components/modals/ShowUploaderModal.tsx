@@ -63,8 +63,8 @@ export const ShowUploaderModal = ({
   );
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <div className={styles.overlay} onClick={setShowUploader}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>Añadir nuevo libro</h2>
           <button className={styles.cancelButton} onClick={setShowUploader}>
