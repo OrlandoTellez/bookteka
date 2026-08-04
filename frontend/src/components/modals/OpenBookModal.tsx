@@ -159,10 +159,11 @@ export const OpenBookModal = ({
                       ? `${Math.round(downloadProgress)}%`
                       : "..."}
                   </>
-                ) : isReading ? (
-                  "Continuar leyendo"
                 ) : (
-                  "Leer libro"
+                  <>
+                    <Play size={16} fill="currentColor" />
+                    {isReading ? "Continuar leyendo" : "Leer libro"}
+                  </>
                 )}
               </button>
             </div>
