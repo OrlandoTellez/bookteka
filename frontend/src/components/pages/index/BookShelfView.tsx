@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Clock, BookOpen, Trash2 } from "lucide-react";
 import styles from "./BookShelfView.module.css";
 import type { Book } from "@/database";
@@ -10,6 +10,7 @@ interface BookShelfViewProps {
   books: Book[];
   onOpen: (book: Book) => Promise<void>;
   onDelete: (id: string) => void;
+  onMove: (draggedId: string, beforeId: string | null, afterId: string | null) => void;
   isProcessingPdf?: boolean;
   downloadingBookId?: string;
   pdfProgress?: number;
@@ -66,6 +67,11 @@ const ShelfBook = ({
   isProcessingPdf,
   downloadingBookId,
   pdfProgress,
+  isDragging,
+  onDragStart,
+  onDragEnd,
+  onDragEnter,
+  onDrop,
 }: {
   book: Book;
   onOpen: (book: Book) => Promise<void>;
@@ -73,6 +79,11 @@ const ShelfBook = ({
   isProcessingPdf?: boolean;
   downloadingBookId?: string;
   pdfProgress?: number;
+  isDragging: boolean;
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
+  onDragEnter: (id: string) => void;
+  onDrop: (id: string) => void;
 }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bookModalOpen, setBookModalOpen] = useState(false);
@@ -89,8 +100,23 @@ const ShelfBook = ({
 
   return (
     <div
-      className={styles.bookWrapper}
+      className={`${styles.bookWrapper} ${isDragging ? styles.dragging : ""}`}
       style={{ width: thickness, height }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", book.id);
+        onDragStart(book.id);
+      }}
+      onDragEnd={onDragEnd}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        onDragEnter(book.id);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop(book.id);
+      }}
     >
       <button
         onClick={() => setBookModalOpen(true)}
@@ -207,12 +233,27 @@ const BookShelfView = ({
   books,
   onOpen,
   onDelete,
+  onMove,
   isProcessingPdf,
   downloadingBookId,
   pdfProgress,
 }: BookShelfViewProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [shelfWidth, setShelfWidth] = useState(0);
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  const [localBooks, setLocalBooks] = useState<Book[]>(books);
+  const localBooksRef = useRef<Book[]>(books);
+
+  useEffect(() => {
+    const ids = books.map((b) => b.id);
+    const localIds = localBooksRef.current.map((b) => b.id);
+    if (ids.length === localIds.length && ids.every((id, i) => id === localIds[i])) {
+      return;
+    }
+    localBooksRef.current = books;
+    setLocalBooks(books);
+  }, [books]);
 
   // Medir el ancho real del contenedor para llenar cada estante completo
   useLayoutEffect(() => {
@@ -226,9 +267,38 @@ const BookShelfView = ({
     return () => observer.disconnect();
   }, []);
 
+  // Mueve el libro arrastrado a la posición del objetivo (reorden en vivo)
+  const reorderLocal = useCallback((draggedId: string, targetId: string) => {
+    const prev = localBooksRef.current;
+    const from = prev.findIndex((b) => b.id === draggedId);
+    const to = prev.findIndex((b) => b.id === targetId);
+    if (from === -1 || to === -1 || from === to) return;
+    const next = [...prev];
+    const [moved] = next.splice(from, 1);
+    next.splice(from < to ? to - 1 : to, 0, moved);
+    localBooksRef.current = next;
+    setLocalBooks(next);
+  }, []);
+
+  // Al soltar: persistir el nuevo orden calculando los vecinos del libro
+  const handleDrop = useCallback(
+    (targetId: string) => {
+      const id = dragId;
+      if (!id) return;
+      if (id !== targetId) reorderLocal(id, targetId);
+      const list = localBooksRef.current;
+      const idx = list.findIndex((b) => b.id === id);
+      const beforeId = idx > 0 ? list[idx - 1].id : null;
+      const afterId = idx >= 0 && idx < list.length - 1 ? list[idx + 1].id : null;
+      onMove(id, beforeId, afterId);
+      setDragId(null);
+    },
+    [dragId, reorderLocal, onMove],
+  );
+
   const shelves = useMemo(() => {
     const result: Book[][] = [];
-    if (books.length === 0) {
+    if (localBooks.length === 0) {
       result.push([]);
       return result;
     }
@@ -238,7 +308,7 @@ const BookShelfView = ({
     const gap = 4;
     let current: Book[] = [];
     let used = padding;
-    for (const book of books) {
+    for (const book of localBooks) {
       const width = getBookThickness(book.name) + gap;
       if (current.length > 0 && used + width > available) {
         result.push(current);
@@ -250,10 +320,18 @@ const BookShelfView = ({
     }
     if (current.length > 0) result.push(current);
     return result;
-  }, [books, shelfWidth]);
+  }, [localBooks, shelfWidth]);
 
   return (
-    <div className={styles.container} ref={containerRef}>
+    <div
+      className={`${styles.container} ${dragId ? styles.dragging : ""}`}
+      ref={containerRef}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragId(null);
+      }}
+    >
       {shelves.map((shelfBooks, idx) => (
         <div key={idx} className={styles.shelfUnit}>
           <div className={styles.booksRow}>
@@ -266,6 +344,13 @@ const BookShelfView = ({
                 isProcessingPdf={isProcessingPdf}
                 downloadingBookId={downloadingBookId}
                 pdfProgress={pdfProgress}
+                isDragging={dragId === book.id}
+                onDragStart={setDragId}
+                onDragEnd={() => setDragId(null)}
+                onDragEnter={(id) => {
+                  if (dragId && dragId !== id) reorderLocal(dragId, id);
+                }}
+                onDrop={handleDrop}
               />
             ))}
           </div>

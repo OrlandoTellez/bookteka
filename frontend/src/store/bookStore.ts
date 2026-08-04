@@ -9,6 +9,8 @@ import {
   updateBookScrollPosition,
   updateBookCurrentPage,
   setBookReadingTime,
+  setBookOrder,
+  updateBookPosition,
   getBookmarksByBook,
   getBookmark,
   saveBookmark,
@@ -59,6 +61,11 @@ interface BookStore {
   setReadingTime: (id: string, totalSeconds: number) => Promise<void>;
   updateScrollPosition: (id: string, position: number) => Promise<void>;
   updateCurrentPage: (id: string, page: number) => Promise<void>;
+  moveBook: (
+    draggedId: string,
+    beforeId: string | null,
+    afterId: string | null,
+  ) => Promise<void>;
 
   // Acciones de UI
   setShowUploader: (show: boolean) => void;
@@ -307,6 +314,12 @@ export const useBookStore = create<BookStore>((set) => ({
       bookId = generateId();
     }
 
+    // Los libros nuevos van al final del estante si ya existe un orden manual
+    const maxPos = useBookStore.getState().books.reduce(
+      (max, b) => (b.position !== undefined && b.position > max ? b.position : max),
+      -1,
+    );
+
     const newBook: Book = {
       id: bookId,
       name,
@@ -318,6 +331,7 @@ export const useBookStore = create<BookStore>((set) => ({
       totalPages,
       fileBlob: file,
       isSynced,
+      position: maxPos >= 0 ? maxPos + 1 : undefined,
     };
 
     try {
@@ -520,6 +534,63 @@ export const useBookStore = create<BookStore>((set) => ({
     } catch (error) {
       console.error("Error updating current page:", error);
       set({ error: "Error al actualizar página actual" });
+    }
+  },
+
+  // Mueve un libro entre dos vecinos visibles (drag & drop en el estante).
+  // Asigna una posición intermedia (float) para no tener que renumbrar los
+  // demás libros, preservando también a los ocultos por filtros.
+  moveBook: async (draggedId, beforeId, afterId) => {
+    try {
+      const current = useBookStore.getState().books;
+
+      // Primera ordenación manual: fijar posiciones según el orden actual
+      let books = current;
+      if (current.some((b) => b.position === undefined)) {
+        await setBookOrder(current.map((b) => b.id));
+        books = current.map((b, i) => ({ ...b, position: i }));
+      }
+
+      const posOf = (id: string | null): number | undefined =>
+        id === null ? undefined : books.find((b) => b.id === id)?.position;
+
+      const before = posOf(beforeId);
+      const after = posOf(afterId);
+
+      // Límites globales para anclar los bordes (evita colisionar con libros
+      // ocultos por filtros cuando se suelta al inicio/fin de la lista visible)
+      const finitePositions = books
+        .map((b) => b.position)
+        .filter((p): p is number => p !== undefined);
+      const globalMin = finitePositions.length > 0 ? Math.min(...finitePositions) : 0;
+      const globalMax = finitePositions.length > 0 ? Math.max(...finitePositions) : 0;
+
+      let position: number;
+      if (before !== undefined && after !== undefined) {
+        position = (before + after) / 2;
+      } else if (before !== undefined) {
+        position = globalMax + 1;
+      } else if (after !== undefined) {
+        position = globalMin - 1;
+      } else {
+        position = 0;
+      }
+
+      await updateBookPosition(draggedId, position);
+
+      // `books` ya incluye las posiciones normalizadas (si hizo falta)
+      set(() => ({
+        books: books
+          .map((b) => (b.id === draggedId ? { ...b, position } : b))
+          .sort(
+            (a, b) =>
+              (a.position ?? Infinity) - (b.position ?? Infinity) ||
+              (b.lastReadAt || 0) - (a.lastReadAt || 0),
+          ),
+      }));
+    } catch (error) {
+      console.error("Error moving book:", error);
+      set({ error: "Error al reordenar los libros" });
     }
   },
 

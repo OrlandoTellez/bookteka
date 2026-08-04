@@ -14,6 +14,8 @@ export interface Book {
   createdAt: number;
   totalPages?: number;
   fileBlob?: File;
+  // Posición en el estante (orden manual vía drag & drop)
+  position?: number;
   // Campos para sincronización con cloud
   fileUrl?: string;
   fileKey?: string;

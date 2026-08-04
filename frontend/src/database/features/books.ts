@@ -12,8 +12,12 @@ export async function getAllBooks(): Promise<Book[]> {
   const index = tx.store.index("by-userId");
   const books = await index.getAll(currentUserId);
 
-  // Ordenar por lastRead descendente
-  return books.sort((a, b) => (b.lastReadAt || 0) - (a.lastReadAt || 0));
+  // Ordenar por posición manual (si existe) y, como desempate, por lastRead descendente
+  return books.sort(
+    (a, b) =>
+      (a.position ?? Infinity) - (b.position ?? Infinity) ||
+      (b.lastReadAt || 0) - (a.lastReadAt || 0),
+  );
 }
 
 // Obtiene un libro según su ID
@@ -125,6 +129,38 @@ export async function updateBookCurrentPage(
   if (book && book.userId === currentUserId) {
     book.currentPage = currentPage;
     book.lastReadAt = Date.now();
+    await db.put("books", book);
+  }
+}
+
+// Fija el orden de los libros asignando position = índice en la lista dada
+export async function setBookOrder(ids: string[]): Promise<void> {
+  const currentUserId = getCurrentUserId();
+  if (!currentUserId) return;
+
+  const db = await getDatabase();
+  const tx = db.transaction("books", "readwrite");
+  for (let i = 0; i < ids.length; i++) {
+    const book = await tx.store.get(ids[i]);
+    if (book && book.userId === currentUserId) {
+      await tx.store.put({ ...book, position: i });
+    }
+  }
+  await tx.done;
+}
+
+// Actualiza la posición de un libro (usada en drag & drop)
+export async function updateBookPosition(
+  id: string,
+  position: number,
+): Promise<void> {
+  const currentUserId = getCurrentUserId();
+  if (!currentUserId) return;
+
+  const db = await getDatabase();
+  const book = await db.get("books", id);
+  if (book && book.userId === currentUserId) {
+    book.position = position;
     await db.put("books", book);
   }
 }

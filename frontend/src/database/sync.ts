@@ -43,6 +43,8 @@ export async function syncBooksFromCloud(): Promise<Book[]> {
       text: localBook?.text || "",
       // Preservar fileBlob si existe (no viene del servidor)
       fileBlob: localBook?.fileBlob,
+      // El orden manual del estante es local: preservar la posición
+      position: localBook?.position ?? undefined,
       // Marcar como sincronizado ya que viene de la nube
       isSynced: true,
     };

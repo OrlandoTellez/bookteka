@@ -41,6 +41,8 @@ vi.mock("@/database", () => ({
   updateBookReadingTime: vi.fn(() => Promise.resolve()),
   setBookReadingTime: vi.fn(() => Promise.resolve()),
   updateBookScrollPosition: vi.fn(() => Promise.resolve()),
+  setBookOrder: vi.fn(() => Promise.resolve()),
+  updateBookPosition: vi.fn(() => Promise.resolve()),
   getBookmarksByBook: vi.fn(() => Promise.resolve([])),
   getBookmark: vi.fn(() => Promise.resolve(undefined)),
   saveBookmark: vi.fn(() => Promise.resolve()),
@@ -298,6 +300,25 @@ describe("bookStore", () => {
     it("returns null for non-existent book", async () => {
       const book = await useBookStore.getState().getBookById("non-existent");
       expect(book).toBeNull();
+    });
+  });
+
+  describe("moveBook", () => {
+    it("normalizes positions and moves a book after its neighbor", async () => {
+      await useBookStore.getState().loadBooks();
+      // Estado inicial: [book-1, book-2] sin position
+
+      // Mover book-1 después de book-2 (beforeId = book-2)
+      await useBookStore.getState().moveBook("book-1", "book-2", null);
+
+      const { books } = useBookStore.getState();
+      expect(books[0].id).toBe("book-2");
+      expect(books[1].id).toBe("book-1");
+
+      // La primera ordenación manual fija posiciones iniciales
+      const { setBookOrder, updateBookPosition } = await import("@/database");
+      expect(setBookOrder).toHaveBeenCalled();
+      expect(updateBookPosition).toHaveBeenCalledWith("book-1", expect.any(Number));
     });
   });
 });

@@ -64,6 +64,7 @@ export const Library = () => {
     isProcessingPdf,
     pdfProgress,
     downloadingBookId,
+    moveBook,
   } = useBookStore();
 
   useEffect(() => {
@@ -93,6 +94,13 @@ export const Library = () => {
     [getBookById, setCurrentBook, setCurrentView],
   );
 
+  const handleMove = useCallback(
+    async (draggedId: string, beforeId: string | null, afterId: string | null) => {
+      await moveBook(draggedId, beforeId, afterId);
+    },
+    [moveBook],
+  );
+
   const processedBooks = useMemo(() => {
     let filtered = [...books];
 
@@ -119,6 +127,25 @@ export const Library = () => {
 
     return filtered;
   }, [books, searchQuery, filterStatus, sortBy]);
+
+  // Orden del estante: respeta el orden manual (position) en vez del selector
+  // de orden; solo se aplican búsqueda y filtros de estado.
+  const shelfBooks = useMemo(() => {
+    let filtered = [...books];
+
+    if (searchQuery.trim()) {
+      const q = normalizeText(searchQuery);
+      filtered = filtered.filter((b) => normalizeText(b.name).includes(q));
+    }
+
+    if (filterStatus === "reading") {
+      filtered = filtered.filter((b) => b.scrollPosition > 0);
+    } else if (filterStatus === "unstarted") {
+      filtered = filtered.filter((b) => b.scrollPosition === 0);
+    }
+
+    return filtered;
+  }, [books, searchQuery, filterStatus]);
 
   // Paginación
   const paginatedBooks = useMemo(() => {
@@ -198,6 +225,7 @@ export const Library = () => {
           books={booksToRender}
           onOpen={handleOpenBook}
           onDelete={handleDelete}
+          onMove={handleMove}
           isProcessingPdf={isProcessingPdf}
           downloadingBookId={downloadingBookId}
           pdfProgress={pdfProgress}
@@ -278,7 +306,7 @@ export const Library = () => {
           </div>
         </>
       )}
-      <article>{viewMode === "shelf" ? renderBooks(processedBooks) : renderBooks(paginatedBooks)}</article>
+      <article>{viewMode === "shelf" ? renderBooks(shelfBooks) : renderBooks(paginatedBooks)}</article>
 
       {viewMode !== "shelf" && (
         <Pagination

@@ -21,6 +21,8 @@ export {
   setBookReadingTime,
   updateBookScrollPosition,
   updateBookCurrentPage,
+  setBookOrder,
+  updateBookPosition,
 } from "./features/books";
 
 export {
