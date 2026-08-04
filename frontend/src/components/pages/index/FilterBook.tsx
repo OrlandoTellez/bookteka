@@ -1,7 +1,6 @@
 import { ChevronDown, Search } from "lucide-react";
 import styles from "./FilterBook.module.css"
 
-type SortBy = "recent" | "name" | "time";
 type FilterStatus = "all" | "reading" | "unstarted";
 
 interface FilterBookProps {
@@ -11,12 +10,7 @@ interface FilterBookProps {
   setIsFilterOpen: () => void
   filterStatus: FilterStatus
   setFilterStatus: (key: FilterStatus) => void
-  sortBy: SortBy
-  setSortBy: (key: SortBy) => void
-  isSortOpen: boolean
-  setIsSortOpen: () => void
   filterLabels: Record<FilterStatus, string>
-  sortLabels: Record<SortBy, string>
 }
 
 export const FilterBook = ({
@@ -26,12 +20,7 @@ export const FilterBook = ({
   setIsFilterOpen,
   filterStatus,
   setFilterStatus,
-  sortBy,
-  setSortBy,
-  isSortOpen,
-  setIsSortOpen,
   filterLabels,
-  sortLabels
 }: FilterBookProps) => {
   return (
     <>
@@ -81,37 +70,6 @@ export const FilterBook = ({
           </div>
         </div>
 
-        <div className={`dropdown-sort ${styles.dropdown}`}>
-          <button
-            className={styles.dropdownTrigger}
-            onClick={setIsSortOpen}
-            aria-expanded={isSortOpen}
-          >
-            {sortLabels[sortBy]}
-
-            <ChevronDown width={16}
-              className={`${styles.chevron} ${isSortOpen ? styles.chevronOpen : ""}`}
-            />
-
-          </button>
-          <div
-            className={`${styles.dropdownContent} ${isSortOpen ? styles.open : ""
-              }`}
-          >
-            {(Object.keys(sortLabels) as SortBy[]).map((key) => (
-              <button
-                key={key}
-                className={styles.dropdownItem}
-                onClick={() => {
-                  setSortBy(key);
-                  setIsSortOpen();
-                }}
-              >
-                {sortLabels[key]}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </>
   )

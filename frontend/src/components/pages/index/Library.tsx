@@ -8,8 +8,6 @@ import type { LibraryView } from "@/types/reading";
 import styles from "./Library.module.css";
 import {
   Book as BookIcon,
-  Grid,
-  Menu,
   Plus,
 } from "lucide-react";
 import { CardBookList } from "./CardBookList";
@@ -22,34 +20,14 @@ import BookShelfView from "./BookShelfView";
 
 const ITEMS_PER_PAGE = 6;
 
-type SortBy = "recent" | "name" | "time";
 type FilterStatus = "all" | "reading" | "unstarted";
 
 export const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [sortBy, setSortBy] = useState<SortBy>("recent");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isSortOpen, setIsSortOpen] = useState(false);
   const [viewMode, setViewMode] = useState<LibraryView>(useUserPreferences.getState().defaultView);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const { defaultView, setDefaultView } = useUserPreferences();
-
-  const [isManualView, setIsManualView] = useState(false);
-
-  useEffect(() => {
-    if (!isManualView) setViewMode(defaultView);
-  }, [defaultView, isManualView]);
-
-  const handleViewModeChange = useCallback(
-    (view: LibraryView) => {
-      setViewMode(view);
-      setIsManualView(true);
-      setDefaultView(view);
-    },
-    [setDefaultView],
-  );
 
   const {
     books,
@@ -71,7 +49,6 @@ export const Library = () => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest(".dropdown-filter")) setIsFilterOpen(false);
-      if (!target.closest(".dropdown-sort")) setIsSortOpen(false);
     };
 
     document.addEventListener("click", handleClickOutside);
@@ -81,7 +58,7 @@ export const Library = () => {
   // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterStatus, sortBy]);
+  }, [searchQuery, filterStatus]);
 
   const handleOpenBook = useCallback(
     async (book: Book) => {
@@ -117,16 +94,8 @@ export const Library = () => {
       filtered = filtered.filter((b) => b.scrollPosition === 0);
     }
 
-    // Sort
-    filtered.sort((a, b) => {
-      if (sortBy === "recent") return b.lastReadAt - a.lastReadAt;
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      if (sortBy === "time") return b.readingTimeSeconds - a.readingTimeSeconds;
-      return 0;
-    });
-
     return filtered;
-  }, [books, searchQuery, filterStatus, sortBy]);
+  }, [books, searchQuery, filterStatus]);
 
   // Orden del estante: respeta el orden manual (position) en vez del selector
   // de orden; solo se aplican búsqueda y filtros de estado.
@@ -160,12 +129,6 @@ export const Library = () => {
     all: "Todos",
     reading: "Leyendo",
     unstarted: "sin empezar",
-  };
-
-  const sortLabels: Record<SortBy, string> = {
-    recent: "Recientes",
-    name: "Nombre",
-    time: "Tiempo",
   };
 
   const handleCloseUploader = useCallback(() => {
@@ -241,8 +204,6 @@ export const Library = () => {
       {books.length > 0 ? (
         <div className={styles.toolbar}>
           {/* Search */}
-
-
           <FilterBook
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -250,41 +211,8 @@ export const Library = () => {
             setIsFilterOpen={() => setIsFilterOpen(!isFilterOpen)}
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            isSortOpen={isSortOpen}
-            setIsSortOpen={() => setIsSortOpen(!isSortOpen)}
             filterLabels={filterLabels}
-            sortLabels={sortLabels}
           />
-
-          <div className={styles.viewToggle}>
-            <button
-              className={`${styles.viewButton} ${styles.viewButtonLast} ${viewMode === "shelf" ? styles.active : ""
-                }`}
-              onClick={() => handleViewModeChange("shelf")}
-              aria-label="Vista estante"
-            >
-              <BookIcon width={16} />
-            </button>
-
-            <button
-              className={`${styles.viewButton} ${styles.viewButtonFirst} ${viewMode === "grid" ? styles.active : ""
-                }`}
-              onClick={() => handleViewModeChange("grid")}
-              aria-label="Vista grid"
-            >
-              <Grid width={16} />
-            </button>
-            <button
-              className={`${styles.viewButton} ${styles.viewButtonMiddle} ${viewMode === "list" ? styles.active : ""
-                }`}
-              onClick={() => handleViewModeChange("list")}
-              aria-label="Vista lista"
-            >
-              <Menu width={16} />
-            </button>
-          </div>
         </div>
       ) : (
         <>
