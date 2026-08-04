@@ -1,6 +1,6 @@
-import { LoginForm } from "@/components/auth/LoginForm";
-import { SideLogo } from "@/components/auth/SideLogo";
+import { SideLogo } from "@/components/pages/auth/SideLogo";
 import styles from "./Login.module.css";
+import { LoginForm } from "@/components/pages/auth/LoginForm";
 
 const Login = () => {
   return (

@@ -1,6 +1,6 @@
 import styles from "./SideLogo.module.css";
-import logoDark from "../../assets/logoDark.svg";
-import logoLight from "../../assets/logoLight.svg";
+import logoDark from "../../../assets/logoDark.svg";
+import logoLight from "../../../assets/logoLight.svg";
 import { useTheme } from "@/context/ThemeContext";
 
 export const SideLogo = () => {

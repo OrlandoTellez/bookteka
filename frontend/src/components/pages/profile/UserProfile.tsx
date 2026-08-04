@@ -19,7 +19,6 @@ import styles from "./UserProfile.module.css";
 import { Link } from "react-router-dom";
 import { StatCard } from "./StatCard";
 import { StreakCard } from "./StreakCard";
-import { LogoutButton } from "@/components/auth/LogoutButton";
 import { CardProfile } from "./CardProfile";
 import { ReadingSettingsCard } from "./ReadingSettingsCard";
 import { DefaultViewCard } from "./DefaultViewCard";
@@ -27,6 +26,7 @@ import { downloadBook } from "@/api/book";
 import { CloudSyncToggle } from "@/components/common/CloudSyncToggle";
 import { Spinner } from "@/components/common/Spinner";
 import { Pagination } from "@/components/pages/index/Pagination";
+import { LogoutButton } from "../auth/LogoutButton";
 
 const BOOKS_PER_PAGE = 10;
 

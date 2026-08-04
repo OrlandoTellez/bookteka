@@ -5,15 +5,15 @@ import { Input } from "@/components/common/Input.tsx";
 import {
   registerSchema,
   type RegisterData,
-} from "../../validations/loginValidations.ts";
+} from "../../../validations/loginValidations.ts";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "@/lib/auth-api";
 import { invalidateAuthSession } from "@/lib/useAuthSession";
 import { useState } from "react";
-import logoDark from "../../assets/logoDark.svg";
-import logoLight from "../../assets/logoLight.svg";
+import logoDark from "../../../assets/logoDark.svg";
+import logoLight from "../../../assets/logoLight.svg";
 import { useTheme } from "@/context/ThemeContext";
-import { IconTheme } from "../common/IconTheme.tsx";
+import { IconTheme } from "../../common/IconTheme.tsx";
 
 export const RegisterForm = () => {
   const navigate = useNavigate();
