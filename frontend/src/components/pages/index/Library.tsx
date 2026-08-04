@@ -26,7 +26,7 @@ export const Library = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<LibraryView>(useUserPreferences.getState().defaultView);
+  const [viewMode] = useState<LibraryView>(useUserPreferences.getState().defaultView);
   const [currentPage, setCurrentPage] = useState(1);
 
   const {

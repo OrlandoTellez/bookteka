@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   User,
   Clock,
@@ -8,7 +9,8 @@ import {
   Cloud,
   CloudOff,
   CloudDownload,
-  CloudUpload
+  CloudUpload,
+  Settings
 } from "lucide-react";
 import { formatTime } from "@/utils/time";
 import type { Book } from "@/types/book";
@@ -56,6 +58,7 @@ const UserProfile = ({
   defaultView,
   onDefaultViewChange,
 }: UserProfileProps) => {
+  const [activeTab, setActiveTab] = useState<"config" | "data">("data");
   const totalBooks = books.length;
   const totalReadingTime = books.reduce(
     (acc, book) => acc + book.readingTimeSeconds,
@@ -134,141 +137,168 @@ const UserProfile = ({
         </div>
       </header>
 
-
+      {/* Tabs de navegación (debajo del header) */}
+      <nav className={styles.tabsRow}>
+        <div className={styles.tabs} role="tablist">
+          <button
+            role="tab"
+            aria-selected={activeTab === "data"}
+            className={`${styles.tab} ${activeTab === "data" ? styles.tabActive : ""}`}
+            onClick={() => setActiveTab("data")}
+          >
+            <User size={16} />
+            Perfil
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === "config"}
+            className={`${styles.tab} ${activeTab === "config" ? styles.tabActive : ""}`}
+            onClick={() => setActiveTab("config")}
+          >
+            <Settings size={16} />
+            Configuración
+          </button>
+        </div>
+      </nav>
 
       <main className={styles.main}>
-        <CloudSyncToggle />
+        {activeTab === "config" ? (
+          <>
+            <CloudSyncToggle />
 
-        <StreakCard
-          streakData={
-            streakData ?? {
-              currentStreak: 0,
-              startDate: null,
-              hasCompletedToday: false,
-            }
-          }
-          onCompleteDay={onCompleteDay}
-          onInitializeStreak={onInitializeStreak}
-          isLoading={isStreakLoading}
-        />
+            {defaultView && onDefaultViewChange && (
+              <DefaultViewCard view={defaultView} onChange={onDefaultViewChange} />
+            )}
 
-        <CardProfile />
+            {readingSettings && onReadingSettingsChange && onReadingSettingsReset && (
+              <ReadingSettingsCard
+                settings={readingSettings}
+                onChange={onReadingSettingsChange}
+                onReset={onReadingSettingsReset}
+              />
+            )}
 
-        {defaultView && onDefaultViewChange && (
-          <DefaultViewCard view={defaultView} onChange={onDefaultViewChange} />
-        )}
+            <article className={styles.config}>
+              <div className={styles.logoutContainer}>
+                <LogoutButton />
+              </div>
+            </article>
+          </>
+        ) : (
+          <>
+            <StreakCard
+              streakData={
+                streakData ?? {
+                  currentStreak: 0,
+                  startDate: null,
+                  hasCompletedToday: false,
+                }
+              }
+              onCompleteDay={onCompleteDay}
+              onInitializeStreak={onInitializeStreak}
+              isLoading={isStreakLoading}
+            />
 
-        {readingSettings && onReadingSettingsChange && onReadingSettingsReset && (
-          <ReadingSettingsCard
-            settings={readingSettings}
-            onChange={onReadingSettingsChange}
-            onReset={onReadingSettingsReset}
-          />
-        )}
+            <CardProfile />
 
-        <article className={styles.article}>
-          {/* Stats */}
-          <div className={styles.statsGrid}>
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <StatCard
-                  key={index}
-                  icon={<Icon {...stat.iconProps} />}
-                  label={stat.label}
-                  value={stat.value}
-                />
-              );
-            })}
-          </div>
+            <article className={styles.article}>
+              {/* Stats */}
+              <div className={styles.statsGrid}>
+                {stats.map((stat, index) => {
+                  const Icon = stat.icon;
+                  return (
+                    <StatCard
+                      key={index}
+                      icon={<Icon {...stat.iconProps} />}
+                      label={stat.label}
+                      value={stat.value}
+                    />
+                  );
+                })}
+              </div>
 
-          {/* Books */}
-          {booksByReadingTime.length > 0 && (
-            <div className={styles.card}>
-              <h2 className={styles.sectionTitle}>
-                <TrendingUp size={18} color="var(--font-color-title)" />
-                Todos los libros
-              </h2>
+              {/* Books */}
+              {booksByReadingTime.length > 0 && (
+                <div className={styles.card}>
+                  <h2 className={styles.sectionTitle}>
+                    <TrendingUp size={18} color="var(--font-color-title)" />
+                    Todos los libros
+                  </h2>
 
-              {booksByReadingTime.map((book, index) => (
-                <div key={book.id} className={styles.bookRow}>
-                  <span className={styles.index}>{index + 1}</span>
+                  {booksByReadingTime.map((book, index) => (
+                    <div key={book.id} className={styles.bookRow}>
+                      <span className={styles.index}>{index + 1}</span>
 
-                  <div className={styles.bookName}>
-                    {book.name.replace(".pdf", "")}
-                  </div>
+                      <div className={styles.bookName}>
+                        {book.name.replace(".pdf", "")}
+                      </div>
 
-                  <span className={styles.time}>
-                    {formatTime(book.readingTimeSeconds)}
-                  </span>
+                      <span className={styles.time}>
+                        {formatTime(book.readingTimeSeconds)}
+                      </span>
 
-                  {/* Indicador de sync + Botón acción */}
-                  <div className={styles.cloudActions}>
-                    {/* Indicador visual */}
-                    <div
-                      className={styles.syncBadge}
-                      title={book.isSynced ? "Sincronizado en la nube" : "Solo en este dispositivo"}
-                    >
-                      {book.isSynced ? (
-                        <Cloud size={14} color="var(--secondary-color)" />
-                      ) : (
-                        <CloudOff size={14} color="var(--font-color-text)" />
+                      {/* Indicador de sync + Botón acción */}
+                      <div className={styles.cloudActions}>
+                        {/* Indicador visual */}
+                        <div
+                          className={styles.syncBadge}
+                          title={book.isSynced ? "Sincronizado en la nube" : "Solo en este dispositivo"}
+                        >
+                          {book.isSynced ? (
+                            <Cloud size={14} color="var(--secondary-color)" />
+                          ) : (
+                            <CloudOff size={14} color="var(--font-color-text)" />
+                          )}
+                        </div>
+
+                        {/* Botón acción: descargar si está en nube, subir si no */}
+                        <div className={styles.actionButtons}>
+                          {book.isSynced ? (
+                            <button
+                              onClick={() => handleDownload(book.id, book.name)}
+                              className={styles.actionButton}
+                              title="Descargar PDF"
+                            >
+                              <CloudDownload size={18} color="var(--secondary-color)" />
+                            </button>
+                          ) : onUploadToCloud ? (
+                            <button
+                              onClick={() => onUploadToCloud(book.id)}
+                              className={styles.actionButton}
+                              disabled={!!isUploadingBookId}
+                              title={isUploadingBookId ? "Subiendo..." : "Subir a la nube"}
+                            >
+                              {isUploadingBookId === book.id ? (
+                                <Spinner />
+                              ) : (
+                                <CloudUpload size={18} color="#f97316" />
+                              )}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {onEditTime && (
+                        <button
+                          className={styles.iconButton}
+                          onClick={() => onEditTime(book)}
+                        >
+                          <Edit2 size={16} color="var(--font-color-title)" />
+                        </button>
                       )}
                     </div>
-
-                    {/* Botón acción: descargar si está en nube, subir si no */}
-                    <div className={styles.actionButtons}>
-                      {book.isSynced ? (
-                        <button
-                          onClick={() => handleDownload(book.id, book.name)}
-                          className={styles.actionButton}
-                          title="Descargar PDF"
-                        >
-                          <CloudDownload size={18} color="var(--secondary-color)" />
-                        </button>
-                      ) : onUploadToCloud ? (
-                        <button
-                          onClick={() => onUploadToCloud(book.id)}
-                          className={styles.actionButton}
-                          disabled={!!isUploadingBookId}
-                          title={isUploadingBookId ? "Subiendo..." : "Subir a la nube"}
-                        >
-                          {isUploadingBookId === book.id ? (
-                            <Spinner />
-                          ) : (
-                            <CloudUpload size={18} color="#f97316" />
-                          )}
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-
-
-                  {onEditTime && (
-                    <button
-                      className={styles.iconButton}
-                      onClick={() => onEditTime(book)}
-                    >
-                      <Edit2 size={16} color="var(--font-color-title)" />
-                    </button>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {books.length === 0 && (
-            <div className={styles.empty}>
-              Aún no tienes libros. ¡Añade uno para empezar!
-            </div>
-          )}
-        </article>
-
-        <article className={styles.config}>
-          <div className={styles.logoutContainer}>
-            <LogoutButton />
-          </div>
-        </article>
+              {books.length === 0 && (
+                <div className={styles.empty}>
+                  Aún no tienes libros. ¡Añade uno para empezar!
+                </div>
+              )}
+            </article>
+          </>
+        )}
       </main>
     </div>
   );
