@@ -239,7 +239,6 @@ const BookShelfView = ({
   pdfProgress,
 }: BookShelfViewProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [shelfWidth, setShelfWidth] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
 
   const [localBooks, setLocalBooks] = useState<Book[]>(books);
@@ -255,13 +254,19 @@ const BookShelfView = ({
     setLocalBooks(books);
   }, [books]);
 
-  // Medir el ancho real del contenedor para llenar cada estante completo
+  const estWidth = useRef(
+    typeof window !== "undefined"
+      ? window.innerWidth - 60 // 20px padding del main + 20px padding del booksRow + 20px de margen de seguridad
+      : Infinity,
+  );
+  const [shelfWidth, setShelfWidth] = useState(estWidth.current);
+
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const update = () => setShelfWidth(el.clientWidth);
     update();
-    if (typeof ResizeObserver === "undefined") return; // jsdom/entornos sin layout
+    if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(update);
     observer.observe(el);
     return () => observer.disconnect();
