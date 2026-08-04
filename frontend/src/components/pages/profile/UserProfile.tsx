@@ -26,6 +26,9 @@ import { DefaultViewCard } from "./DefaultViewCard";
 import { downloadBook } from "@/api/book";
 import { CloudSyncToggle } from "@/components/common/CloudSyncToggle";
 import { Spinner } from "@/components/common/Spinner";
+import { Pagination } from "@/components/pages/index/Pagination";
+
+const BOOKS_PER_PAGE = 10;
 
 interface UserProfileProps {
   books: Book[];
@@ -59,6 +62,7 @@ const UserProfile = ({
   onDefaultViewChange,
 }: UserProfileProps) => {
   const [activeTab, setActiveTab] = useState<"config" | "data">("data");
+  const [booksPage, setBooksPage] = useState(1);
   const totalBooks = books.length;
   const totalReadingTime = books.reduce(
     (acc, book) => acc + book.readingTimeSeconds,
@@ -71,6 +75,17 @@ const UserProfile = ({
 
   const booksByReadingTime = [...books].sort(
     (a, b) => b.readingTimeSeconds - a.readingTimeSeconds,
+  );
+
+  // Paginación de la sección "Todos los libros" (10 por página)
+  const totalBookPages = Math.max(
+    1,
+    Math.ceil(booksByReadingTime.length / BOOKS_PER_PAGE),
+  );
+  const currentBooksPage = Math.min(booksPage, totalBookPages);
+  const pagedBooks = booksByReadingTime.slice(
+    (currentBooksPage - 1) * BOOKS_PER_PAGE,
+    currentBooksPage * BOOKS_PER_PAGE,
   );
 
   const stats = [
@@ -223,11 +238,14 @@ const UserProfile = ({
                   <h2 className={styles.sectionTitle}>
                     <TrendingUp size={18} color="var(--font-color-title)" />
                     Todos los libros
+                    <span className={styles.totalCount}>{totalBooks}</span>
                   </h2>
 
-                  {booksByReadingTime.map((book, index) => (
+                  {pagedBooks.map((book, index) => (
                     <div key={book.id} className={styles.bookRow}>
-                      <span className={styles.index}>{index + 1}</span>
+                      <span className={styles.index}>
+                        {(currentBooksPage - 1) * BOOKS_PER_PAGE + index + 1}
+                      </span>
 
                       <div className={styles.bookName}>
                         {book.name.replace(".pdf", "")}
@@ -288,6 +306,14 @@ const UserProfile = ({
                       )}
                     </div>
                   ))}
+
+                  <Pagination
+                    currentPage={currentBooksPage}
+                    totalPages={totalBookPages}
+                    totalItems={booksByReadingTime.length}
+                    itemsPerPage={BOOKS_PER_PAGE}
+                    onPageChange={setBooksPage}
+                  />
                 </div>
               )}
 

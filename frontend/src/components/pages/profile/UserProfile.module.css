@@ -152,6 +152,15 @@
   font-weight: 600;
 }
 
+.totalCount {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary-color);
+  background: var(--third-color);
+  border-radius: 5px;
+}
+
 .bookRow {
   display: flex;
   align-items: center;
