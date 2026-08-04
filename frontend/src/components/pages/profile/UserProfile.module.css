@@ -10,14 +10,14 @@
   top: 0;
   background: var(--card-color);
   border-bottom: 1px solid var(--border-color);
-  padding: 20px 0px;
+  padding: 27px 0px;
   z-index: 2000;
 }
 
 .headerContainer {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
   max-width: var(--max-width);
   margin: auto;
   padding: 0px 20px;
@@ -42,7 +42,6 @@
 .avatar {
   width: 40px;
   height: 40px;
-  background: var(--third-color);
   border-radius: 5px;
   display: flex;
   align-items: center;

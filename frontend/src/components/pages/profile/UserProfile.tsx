@@ -141,12 +141,8 @@ const UserProfile = ({
           </Link>
 
           <div className={styles.headerInfo}>
-            <div className={styles.avatar}>
-              <User size={24} color="var(--secondary-color)" />
-            </div>
             <div>
               <h2>Mi Perfil</h2>
-              <p>Estadísticas de lectura</p>
             </div>
           </div>
         </div>

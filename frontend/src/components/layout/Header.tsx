@@ -26,7 +26,6 @@ export const Header = () => {
           )}
           <div className={styles.article}>
             <h1>Bookteka</h1>
-            <p>Lee siempre, mente mejor</p>
           </div>
         </div>
 
