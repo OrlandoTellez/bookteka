@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Clock, BookOpen, Trash2 } from "lucide-react";
 import styles from "./BookShelfView.module.css";
 import type { Book } from "@/database";
@@ -211,18 +211,49 @@ const BookShelfView = ({
   downloadingBookId,
   pdfProgress,
 }: BookShelfViewProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [shelfWidth, setShelfWidth] = useState(0);
+
+  // Medir el ancho real del contenedor para llenar cada estante completo
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => setShelfWidth(el.clientWidth);
+    update();
+    if (typeof ResizeObserver === "undefined") return; // jsdom/entornos sin layout
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const shelves = useMemo(() => {
     const result: Book[][] = [];
-    const perShelf = Math.max(5, Math.min(10, Math.ceil(books.length / Math.ceil(books.length / 8))));
-    for (let i = 0; i < books.length; i += perShelf) {
-      result.push(books.slice(i, i + perShelf));
+    if (books.length === 0) {
+      result.push([]);
+      return result;
     }
-    if (result.length === 0) result.push([]);
+    // Sin medición previa (primer render), usar una fila única
+    const available = shelfWidth > 0 ? shelfWidth : Infinity;
+    const padding = 40; // 20px por lado en .booksRow
+    const gap = 4;
+    let current: Book[] = [];
+    let used = padding;
+    for (const book of books) {
+      const width = getBookThickness(book.name) + gap;
+      if (current.length > 0 && used + width > available) {
+        result.push(current);
+        current = [];
+        used = padding;
+      }
+      current.push(book);
+      used += width;
+    }
+    if (current.length > 0) result.push(current);
     return result;
-  }, [books]);
+  }, [books, shelfWidth]);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={containerRef}>
       {shelves.map((shelfBooks, idx) => (
         <div key={idx} className={styles.shelfUnit}>
           <div className={styles.booksRow}>

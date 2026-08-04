@@ -88,6 +88,9 @@
   font-size: 12px;
   overflow: visible;
   opacity: 0;
+  /* visibility:hidden evita que el tooltip oculto genere scroll horizontal
+     en móvil cuando sobresale por el borde de la pantalla. */
+  visibility: hidden;
   pointer-events: none;
   /* Por encima del header fijo (z-index 2000) y por debajo de los modales */
   z-index: 2100;
@@ -96,13 +99,19 @@
   transform-origin: bottom center;
   transition:
     opacity 0.16s ease,
-    transform 0.16s ease;
+    transform 0.16s ease,
+    visibility 0s linear 0.16s;
 }
 
 .bookWrapper:hover .tooltip {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    visibility 0s linear 0s;
 }
 
 /* Flecha que apunta al libro */
