@@ -1,0 +1,41 @@
+.header {
+  position: fixed;
+  width: 100%;
+  left: 0;
+  top: 0;
+  background: var(--card-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 27px 0px;
+  z-index: 2000;
+}
+
+.headerContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: var(--max-width);
+  margin: auto;
+  padding: 0px 20px;
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--font-color-title);
+  font-size: 14px;
+}
+
+.headerInfo h2 {
+  font-size: 20px;
+}
+
+.headerInfo p {
+  color: var(--font-color-text);
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+}

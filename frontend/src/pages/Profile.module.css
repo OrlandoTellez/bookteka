@@ -1,0 +1,28 @@
+.container {
+  background: var(--primary-color);
+  font-family: system-ui, sans-serif;
+}
+
+.main {
+  width: 100%;
+  padding-top: 16px;
+  padding-inline: 20px;
+}
+
+.article {
+  width: 100%;
+  margin: auto;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 20px;
+}
+
+@media only screen and (max-width: 768px) {
+  .article {
+    width: 100%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
